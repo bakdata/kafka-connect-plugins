@@ -1,7 +1,6 @@
 # Kafka Connect drop field(s) SMT
 
-The following provides usage information for the Apache Kafka® SMT
-`org.apache.kafka.connect.transforms.DropField`.
+The following provides usage information for the Kafka Connect `DropField` SMT.
 
 ## Description
 
@@ -86,6 +85,6 @@ The value would transform into this:
 
 ## Properties
 
-| Name      | Description                                         | Type | Default    | Valid Values                                                                                     | Importance |
-|-----------|-----------------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
-| `exclued` | Fields to exclude from the resulting Struct or Map. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
+| Name      | Description                                  | Type | Default    | Valid Values                                                                                     | Importance |
+|-----------|----------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
+| `exclued` | Fields to exclude from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |

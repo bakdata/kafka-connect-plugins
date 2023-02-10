@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "kafka-connect-drop-field-smt"
+rootProject.name = "kafka-connect-plugins"

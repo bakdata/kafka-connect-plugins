@@ -1,13 +1,12 @@
-description = "A custom SMT for removing nested fields in keys and values."
+description = "A Kafka Connect SMT for removing nested fields in keys and values."
 
 plugins {
-    java
     `java-library`
-    id("com.github.davidmc24.gradle.plugin.avro") version "1.2.1"
+    id("com.bakdata.avro") version "1.1.0"
     id("io.freefair.lombok") version "6.6.1"
 }
 
-group = "com.bakdata"
+group = "com.bakdata.kafka"
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
@@ -15,17 +14,16 @@ repositories {
 }
 
 dependencies {
-    val log4jVersion: String by project
-    implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j-impl", version = log4jVersion)
-
     val kafkaVersion: String by project
     compileOnly(group = "org.apache.kafka", name = "connect-transforms", version = kafkaVersion)
 
+    val log4jVersion: String by project
+    testImplementation(group = "org.apache.logging.log4j", name = "log4j-slf4j-impl", version = log4jVersion)
     testImplementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     testImplementation(group = "org.apache.kafka", name = "connect-api", version = kafkaVersion)
-    testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = kafkaVersion) {
+    testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = "3.3.0") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     testImplementation(group = "org.apache.kafka", name = "connect-file", version = kafkaVersion)
@@ -49,13 +47,13 @@ dependencies {
     testImplementation(
         group = "com.bakdata.fluent-kafka-streams-tests",
         name = "schema-registry-mock-junit5",
-        version = "2.7.0"
+        version = "2.8.1"
     )
 }
 
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks {

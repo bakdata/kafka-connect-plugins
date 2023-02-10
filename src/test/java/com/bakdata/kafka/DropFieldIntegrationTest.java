@@ -22,17 +22,14 @@
  * SOFTWARE.
  */
 
-package com.bakdata.drop.nested.field.smt;
+package com.bakdata.kafka;
 
-import static com.bakdata.drop.nested.field.smt.DropField.EXCLUDE_FIELD;
 import static java.util.Collections.singletonList;
 import static net.mguenther.kafka.junit.EmbeddedConnectConfig.kafkaConnect;
 import static net.mguenther.kafka.junit.EmbeddedKafkaClusterConfig.newClusterConfig;
 import static net.mguenther.kafka.junit.SendKeyValues.to;
 import static net.mguenther.kafka.junit.TopicConfig.withName;
 import static net.mguenther.kafka.junit.Wait.delay;
-import static org.apache.kafka.common.config.TopicConfig.CLEANUP_POLICY_CONFIG;
-import static org.apache.kafka.common.config.TopicConfig.CLEANUP_POLICY_DELETE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
@@ -77,9 +74,7 @@ class DropFieldIntegrationTest {
         this.outputFile = Files.createTempFile("test", "temp");
         this.kafkaCluster = this.createCluster();
         this.kafkaCluster.start();
-        this.kafkaCluster.createTopic(withName(TOPIC)
-            .with(CLEANUP_POLICY_CONFIG, CLEANUP_POLICY_DELETE)
-            .build());
+        this.kafkaCluster.createTopic(withName(TOPIC).build());
     }
 
     @AfterEach
@@ -138,9 +133,10 @@ class DropFieldIntegrationTest {
 
         // SMT config
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG, DROP_NESTED_FIELD);
-        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD +
-            ".type", DropField.class.getName() + "$Value");
-        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + "." + EXCLUDE_FIELD, EXCLUDE_PATH);
+        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + ".type",
+            DropField.Value.class.getName());
+        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + "." + DropField.EXCLUDE_FIELD,
+            EXCLUDE_PATH);
 
         properties.put(SinkConnector.TOPICS_CONFIG, TOPIC);
         properties.put(FileStreamSinkConnector.FILE_CONFIG, this.outputFile.toString());

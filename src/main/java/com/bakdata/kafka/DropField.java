@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 
-package com.bakdata.drop.nested.field.smt;
+package com.bakdata.kafka;
 
-import static com.bakdata.drop.nested.field.smt.FieldDropper.createFieldDropper;
-import static com.bakdata.drop.nested.field.smt.FieldDropper.defaultFieldDropper;
+import static com.bakdata.kafka.FieldDropper.createFieldDropper;
+import static com.bakdata.kafka.FieldDropper.defaultFieldDropper;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireStruct;
 
 import java.util.Collections;
@@ -43,7 +43,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private static final String PURPOSE = "field deletion";
 
     static {
-        final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct or Map.";
+        final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
         CONFIG_DEF = new ConfigDef()
             .define(EXCLUDE_FIELD, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM,
                 FIELD_DOCUMENTATION);

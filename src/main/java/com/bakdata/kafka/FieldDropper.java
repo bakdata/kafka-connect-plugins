@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package com.bakdata.drop.nested.field.smt;
+package com.bakdata.kafka;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,30 +74,34 @@ public final class FieldDropper {
         if (this.exclude.isEmpty()) {
             return value;
         }
+        final Collection<LinkedList<String>> excludePaths = new ArrayList<>();
+        for (final String excludePattern : this.exclude) {
+            final LinkedList<String> nestedFields = new LinkedList<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
+            excludePaths.add(nestedFields);
+        }
 
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = this.makeUpdatedSchema(value.schema());
+            updatedSchema = this.makeUpdatedSchema(value.schema(), excludePaths);
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return this.getUpdatedStruct(value, updatedSchema);
+        return this.getUpdatedStruct(value, updatedSchema, new ArrayList<>(excludePaths));
     }
 
-    private Schema makeUpdatedSchema(final Schema schema) {
+    private Schema makeUpdatedSchema(final Schema schema, Iterable<? extends LinkedList<String>> excludePaths) {
         final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        for (final String excludePattern : this.exclude) {
-            final LinkedList<String> nestedFields = new LinkedList<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
-            this.extractSchema(schema, builder, nestedFields);
+        for (final LinkedList<String> excludePattern : excludePaths) {
+            this.extractSchema(schema, builder, new LinkedList<>(excludePattern));
         }
         return builder.build();
     }
 
-    private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema) {
+    private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
+        final Iterable<? extends LinkedList<String>> excludePaths) {
         final Struct updatedValue = new Struct(updatedSchema);
-        for (final String excludePattern : this.exclude) {
-            final LinkedList<String> nestedFields = new LinkedList<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
-            this.updateValues(value, updatedValue, nestedFields);
+        for (final LinkedList<String> excludePattern : excludePaths) {
+            this.updateValues(value, updatedValue, excludePattern);
         }
         return updatedValue;
     }
@@ -106,66 +110,67 @@ public final class FieldDropper {
         final LinkedList<String> nestedFields) {
         LinkedList<String> excludePath = nestedFields;
         for (final String excludeField : excludePath) {
+            final List<String> tmpList = new LinkedList<>(excludePath);
             for (final Field field : schema.schema().fields()) {
                 if (isNotEndOfExcludePath(excludePath, excludeField, field)) {
+                    excludePath.removeFirst();
                     switch (field.schema().type()) {
-                        case ARRAY -> {
+                        case ARRAY:
                             final Schema valueSchema = field.schema().valueSchema();
-                            final List<String> tmpList = new LinkedList<>(excludePath);
-                            excludePath.removeFirst();
-                            final SchemaBuilder structSchema = SchemaBuilder.struct().name(valueSchema.name());
-                            this.extractSchema(valueSchema, structSchema, excludePath);
-                            excludePath = new LinkedList<>(tmpList);
-                            final SchemaBuilder arraySchemaBuilder =
-                                SchemaBuilder.array(structSchema).name(field.name());
+                            final SchemaBuilder arrayStructSchema = SchemaBuilder.struct().name(valueSchema.name());
+                            final SchemaBuilder arraySchemaBuilder = SchemaBuilder
+                                .array(arrayStructSchema)
+                                .name(field.name());
+                            this.extractSchema(valueSchema, arrayStructSchema, excludePath);
                             schemaBuilder.field(field.name(), arraySchemaBuilder.build());
-                        }
-                        case STRUCT -> {
-                            final List<String> tmpList = new LinkedList<>(excludePath);
-                            excludePath.removeFirst();
+                            break;
+                        case STRUCT:
                             final SchemaBuilder structSchema = SchemaBuilder.struct().name(field.name());
                             this.extractSchema(field.schema(), structSchema, excludePath);
-                            excludePath = new LinkedList<>(tmpList);
                             schemaBuilder.field(field.name(), structSchema.schema());
-                        }
+                            break;
+                        default:
+                            throw new RuntimeException("The given path does not exist");
                     }
                 } else if (!field.name().equals(excludeField)) {
                     schemaBuilder.field(field.name(), field.schema());
                 }
             }
+            excludePath = new LinkedList<>(tmpList);
         }
     }
 
     private void updateValues(final Struct value, final Struct updatedValue, final LinkedList<String> nestedFields) {
         LinkedList<String> excludePath = nestedFields;
         for (final String excludeField : excludePath) {
+            final List<String> tmpList = new LinkedList<>(excludePath);
             for (final Field field : value.schema().fields()) {
                 if (isNotEndOfExcludePath(excludePath, excludeField, field)) {
                     switch (field.schema().type()) {
-                        case ARRAY -> {
+                        case ARRAY:
                             final Iterable<Struct> arrayValues = value.getArray(field.name());
-                            final List<String> tmpList = new LinkedList<>(excludePath);
                             final Collection<Struct> values = new ArrayList<>();
                             for (final Struct arrayValue : arrayValues) {
-                                excludePath.removeFirst();
                                 final Struct updatedNestedStruct =
                                     new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
+                                excludePath.removeFirst();
                                 this.updateValues(arrayValue, updatedNestedStruct, excludePath);
-                                values.add(updatedNestedStruct);
                                 excludePath = new LinkedList<>(tmpList);
+                                values.add(updatedNestedStruct);
                             }
                             updatedValue.put(field.name(), values);
-                        }
-                        case STRUCT -> {
+                            break;
+                        case STRUCT:
                             final Struct struct = value.getStruct(field.name());
                             final Struct updatedNestedStruct =
                                 new Struct(updatedValue.schema().field(field.name()).schema());
-                            final List<String> tmpList = new LinkedList<>(excludePath);
                             excludePath.removeFirst();
                             this.updateValues(struct, updatedNestedStruct, excludePath);
                             excludePath = new LinkedList<>(tmpList);
                             updatedValue.put(field.name(), updatedNestedStruct);
-                        }
+                            break;
+                        default:
+                            throw new RuntimeException("The given path does not exist");
                     }
 
                 } else if (!field.name().equals(excludeField)) {

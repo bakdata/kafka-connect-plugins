@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package com.bakdata.drop.nested.field.smt;
+package com.bakdata.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,7 +32,6 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class FieldDropperTest {
