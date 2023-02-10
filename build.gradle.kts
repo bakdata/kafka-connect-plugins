@@ -2,7 +2,9 @@ description = "A Kafka Connect SMT for removing nested fields in keys and values
 
 plugins {
     `java-library`
-    id("com.bakdata.avro") version "1.1.0"
+    id("com.github.davidmc24.gradle.plugin.avro") version "1.2.1"
+    id("com.bakdata.sonar") version "1.1.7"
+    id("com.bakdata.sonatype") version "1.1.7"
     id("io.freefair.lombok") version "6.6.1"
 }
 
