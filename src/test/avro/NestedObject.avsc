@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "NestedObject",
+  "namespace": "com.bakdata.test.smt",
+  "fields": [
+    {
+      "name": "complex_object",
+      "type": "PrimitiveObject"
+    },
+    {
+      "name": "boolean_field",
+      "type": "boolean"
+    }
+  ]
+}

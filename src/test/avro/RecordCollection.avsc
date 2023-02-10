@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "RecordCollection",
+  "namespace": "com.bakdata.test.smt",
+  "fields": [
+    {
+      "name": "collections",
+      "type": {
+        "type": "array",
+        "items": "NestedObject"
+      },
+      "default": []
+    }
+  ]
+}
