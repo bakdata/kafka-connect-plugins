@@ -43,9 +43,9 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 
 @AllArgsConstructor
 public final class FieldDropper {
+    private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private static final Pattern DOT_REGEX = Pattern.compile("\\.");
 
     /**
      * Creates a  with a given list of exclude strings
@@ -63,6 +63,10 @@ public final class FieldDropper {
         return createFieldDropper(Collections.emptyList());
     }
 
+    private static boolean isNotEndOfExcludePath(final Collection<String> excludePath, final String excludeField,
+        final Field field) {
+        return field.name().equals(excludeField) && excludePath.size() != 1;
+    }
 
     /**
      * This method creates the updated schema and then inserts the values based on the give exclude paths.
@@ -178,10 +182,5 @@ public final class FieldDropper {
                 }
             }
         }
-    }
-
-    private static boolean isNotEndOfExcludePath(final Collection<String> excludePath, final String excludeField,
-        final Field field) {
-        return field.name().equals(excludeField) && excludePath.size() != 1;
     }
 }
