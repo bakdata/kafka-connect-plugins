@@ -34,6 +34,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.junit.jupiter.api.Test;
 
+// TODO: Use SoftAssertions
 class FieldDropperTest {
 
     /**
