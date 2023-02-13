@@ -47,9 +47,9 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 @AllArgsConstructor
 public final class FieldDropper {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
+    private static final int MAX_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private static final int MAX_SIZE = 16;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -108,29 +108,31 @@ public final class FieldDropper {
         final int excludePathDepth, final String lastElementOfExcludePath) {
         int currentPathIndex = excludePathDepth;
         for (final Field field : schema.schema().fields()) {
+            final String fieldName = field.name();
+            final Schema fieldSchema = field.schema();
             if (currentPathIndex != 1) {
                 currentPathIndex--;
-                switch (field.schema().type()) {
+                switch (fieldSchema.type()) {
                     case ARRAY:
-                        final Schema valueSchema = field.schema().valueSchema();
+                        final Schema valueSchema = fieldSchema.valueSchema();
                         final SchemaBuilder arrayStructSchema = SchemaBuilder.struct().name(valueSchema.name());
                         final SchemaBuilder arraySchemaBuilder = SchemaBuilder
                             .array(arrayStructSchema)
-                            .name(field.name());
+                            .name(fieldName);
                         this.extractSchema(valueSchema, arrayStructSchema, currentPathIndex, lastElementOfExcludePath);
-                        schemaBuilder.field(field.name(), arraySchemaBuilder.build());
+                        schemaBuilder.field(fieldName, arraySchemaBuilder.build());
                         break;
                     case STRUCT:
-                        final SchemaBuilder structSchema = SchemaBuilder.struct().name(field.name());
-                        this.extractSchema(field.schema(), structSchema, currentPathIndex, lastElementOfExcludePath);
-                        schemaBuilder.field(field.name(), structSchema.schema());
+                        final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
+                        this.extractSchema(fieldSchema, structSchema, currentPathIndex, lastElementOfExcludePath);
+                        schemaBuilder.field(fieldName, structSchema.schema());
                         break;
                     default:
-                        schemaBuilder.field(field.name(), field.schema());
+                        schemaBuilder.field(fieldName, fieldSchema);
                 }
                 currentPathIndex++;
-            } else if (!field.name().equals(lastElementOfExcludePath)) {
-                schemaBuilder.field(field.name(), field.schema());
+            } else if (!fieldName.equals(lastElementOfExcludePath)) {
+                schemaBuilder.field(fieldName, fieldSchema);
             }
         }
     }
@@ -139,29 +141,29 @@ public final class FieldDropper {
         final String lastElementOfExcludePath) {
         int currentPathIndex = excludePathDepth;
         for (final Field field : value.schema().fields()) {
+            final String fieldName = field.name();
             if (currentPathIndex != 1) {
                 currentPathIndex--;
                 switch (field.schema().type()) {
                     case ARRAY:
-                        final Iterable<Struct> arrayValues = value.getArray(field.name());
+                        final Iterable<Struct> arrayValues = value.getArray(fieldName);
                         final Collection<Struct> updatedArrayValues =
                             this.addArrayValues(updatedValue, lastElementOfExcludePath, currentPathIndex, field,
                                 arrayValues);
-                        updatedValue.put(field.name(), updatedArrayValues);
+                        updatedValue.put(fieldName, updatedArrayValues);
                         break;
                     case STRUCT:
-                        final Struct struct = value.getStruct(field.name());
-                        final Struct updatedNestedStruct =
-                            new Struct(updatedValue.schema().field(field.name()).schema());
+                        final Struct struct = value.getStruct(fieldName);
+                        final Struct updatedNestedStruct = new Struct(updatedValue.schema().field(fieldName).schema());
                         this.updateValues(struct, updatedNestedStruct, currentPathIndex, lastElementOfExcludePath);
-                        updatedValue.put(field.name(), updatedNestedStruct);
+                        updatedValue.put(fieldName, updatedNestedStruct);
                         break;
                     default:
-                        updatedValue.put(field.name(), value.get(field));
+                        updatedValue.put(fieldName, value.get(field));
                 }
                 currentPathIndex++;
-            } else if (!field.name().equals(lastElementOfExcludePath)) {
-                updatedValue.put(field.name(), value.get(field));
+            } else if (!fieldName.equals(lastElementOfExcludePath)) {
+                updatedValue.put(fieldName, value.get(field));
             }
         }
     }

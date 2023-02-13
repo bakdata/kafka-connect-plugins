@@ -6,7 +6,7 @@
 
 A collection Kafka Connect plugins
 
-## SMT(s) 
+## SMT(s)
 
 ### Kafka Connect drop field(s) SMT
 
@@ -18,7 +18,6 @@ Drop any (nested) field for a given path.
 
 Use the concrete transformation type designed for the record key (`org.apache.kafka.connect.transforms.DropField$Key`)
 or value (`org.apache.kafka.connect.transforms.DropField$Value`).
-
 
 #### Examples
 
@@ -84,7 +83,6 @@ The value would transform into this:
 |-----------|----------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
 | `exclued` | Fields to exclude from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
 
-
 ## Installation
 
 You can install the SMT by adding the JAR file to your Kafka Connect image. For example:
@@ -101,6 +99,7 @@ ENV CONNECT_PLUGIN_PATH="/connect-plugins,/usr/share/java"
 # Or download the JAR file from Sonartype.
 COPY ./build/libs/*.jar /connect-plugins/kafka-connect-transformations/
 ```
+
 ## Development
 
 If you want to contribute to this project, you can simply clone the repository and build it via Gradle.
@@ -123,5 +122,6 @@ We are also happy to accept your PRs.
 Just open an issue beforehand and let us know what you want to do and why.
 
 ## License
+
 This project is licensed under the MIT license.
 Have a look at the [LICENSE](https://github.com/bakdata/kafka-connect-plugins/blob/master/LICENSE) for more details.
