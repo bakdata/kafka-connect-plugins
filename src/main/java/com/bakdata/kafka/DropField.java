@@ -42,8 +42,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     private static final String PURPOSE = "field deletion";
     private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
-    private static final ConfigDef
-        CONFIG_DEF = new ConfigDef()
+    private static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(EXCLUDE_FIELD, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM,
             FIELD_DOCUMENTATION);
     private FieldDropper fieldDropper;
