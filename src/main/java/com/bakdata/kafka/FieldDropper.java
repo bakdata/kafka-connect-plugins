@@ -28,7 +28,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -42,27 +41,26 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 
+/**
+ * Contains the logic of excluding the fields in the schema and value.
+ */
 @AllArgsConstructor
 public final class FieldDropper {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
+    private static final int MAX_SIZE = 16;
 
     /**
-     * Creates a  with a given list of exclude strings
+     * Creates a  with a given list of exclude strings.
      *
      * @param exclude a list of strings to be dropped in the value
+     * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(16)));
+        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(MAX_SIZE)));
     }
 
-    /**
-     * Creates a default  with no exlcude path.
-     */
-    public static FieldDropper defaultFieldDropper() {
-        return createFieldDropper(Collections.emptyList());
-    }
 
     /**
      * This method creates the updated schema and then inserts the values based on the give exclude paths.
@@ -146,14 +144,10 @@ public final class FieldDropper {
                 switch (field.schema().type()) {
                     case ARRAY:
                         final Iterable<Struct> arrayValues = value.getArray(field.name());
-                        final Collection<Struct> values = new ArrayList<>();
-                        for (final Struct arrayValue : arrayValues) {
-                            final Struct updatedNestedStruct =
-                                new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
-                            this.updateValues(arrayValue, updatedNestedStruct, currentPathIndex, lastElementOfExcludePath);
-                            values.add(updatedNestedStruct);
-                        }
-                        updatedValue.put(field.name(), values);
+                        final Collection<Struct> updatedArrayValues =
+                            this.addArrayValues(updatedValue, lastElementOfExcludePath, currentPathIndex, field,
+                                arrayValues);
+                        updatedValue.put(field.name(), updatedArrayValues);
                         break;
                     case STRUCT:
                         final Struct struct = value.getStruct(field.name());
@@ -170,5 +164,19 @@ public final class FieldDropper {
                 updatedValue.put(field.name(), value.get(field));
             }
         }
+    }
+
+    private Collection<Struct> addArrayValues(final Struct updatedValue, final String lastElementOfExcludePath,
+        final int currentPathIndex,
+        final Field field, final Iterable<? extends Struct> arrayValues) {
+        final Collection<Struct> values = new ArrayList<>();
+        for (final Struct arrayValue : arrayValues) {
+            final Struct updatedNestedStruct =
+                new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
+            this.updateValues(arrayValue, updatedNestedStruct, currentPathIndex,
+                lastElementOfExcludePath);
+            values.add(updatedNestedStruct);
+        }
+        return values;
     }
 }

@@ -1,7 +1,6 @@
-[![Build status](https://travis-ci.org/bakdata/{{repo-name}}.svg?branch=master)](https://travis-ci.org/bakdata/{{repo-name}}/)
-[![Sonarcloud status](https://sonarcloud.io/api/project_badges/measure?project=bakdata-{{repo-name}}&metric=alert_status)](https://sonarcloud.io/dashboard?id=bakdata-{{repo-name}})
-[![Code coverage](https://sonarcloud.io/api/project_badges/measure?project=bakdata-{{repo-name}}&metric=coverage)](https://sonarcloud.io/dashboard?id=bakdata-{{repo-name}})
-[![Maven](https://img.shields.io/maven-central/v/com.bakdata.{{repo-name}}/{{repo-name}}.svg)](https://search.maven.org/search?q=g:com.bakdata.{{repo-name}}%20AND%20a:{{repo-name}}&core=gav)
+[![Sonarcloud status](https://sonarcloud.io/api/project_badges/measure?project=bakdata-kafka-connect-plugins&metric=alert_status)](https://sonarcloud.io/dashboard?id=bakdata-kafka-connect-plugins)
+[![Code coverage](https://sonarcloud.io/api/project_badges/measure?project=bakdata-kafka-connect-plugins&metric=coverage)](https://sonarcloud.io/dashboard?id=bakdata-kafka-connect-plugins)
+[![Maven](https://img.shields.io/maven-central/v/com.bakdata.kafka-connect-plugins/kafka-connect-plugins.svg)](https://search.maven.org/search?q=g:com.bakdata.kafka-connect-plugins%20AND%20a:kafka-connect-plugins&core=gav)
 
 # Kafka Connect plugins
 
@@ -125,4 +124,4 @@ Just open an issue beforehand and let us know what you want to do and why.
 
 ## License
 This project is licensed under the MIT license.
-Have a look at the [LICENSE](https://github.com/bakdata/{{repo-name}}/blob/master/LICENSE) for more details.
+Have a look at the [LICENSE](https://github.com/bakdata/kafka-connect-plugins/blob/master/LICENSE) for more details.

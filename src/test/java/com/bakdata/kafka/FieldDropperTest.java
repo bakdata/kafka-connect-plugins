@@ -70,7 +70,7 @@ class FieldDropperTest {
      */
     @Test
     void shouldDropNoFieldIfNoExcludeIsGiven() {
-        final FieldDropper computerStruct = FieldDropper.defaultFieldDropper();
+        final FieldDropper computerStruct = FieldDropper.createFieldDropper(Collections.emptyList());
         final Schema primitiveSchema = SchemaBuilder
             .struct()
             .name("PrimitiveObject")
