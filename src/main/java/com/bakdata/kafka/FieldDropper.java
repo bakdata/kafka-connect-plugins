@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.regex.Pattern;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
@@ -44,10 +44,10 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 /**
  * Contains the logic of excluding the fields in the schema and value.
  */
-@AllArgsConstructor
+@RequiredArgsConstructor
 public final class FieldDropper {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
-    private static final int MAX_SIZE = 16;
+    private static final int CACHE_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
 
@@ -58,7 +58,7 @@ public final class FieldDropper {
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(MAX_SIZE)));
+        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)));
     }
 
 

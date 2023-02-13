@@ -7,7 +7,7 @@
 
 A collection Kafka Connect plugins
 
-## SMT(s)
+## Single Message Transforms (SMTs)
 
 ### Kafka Connect drop field(s) SMT
 
@@ -97,7 +97,7 @@ FROM confluentinc/cp-kafka-connect:latest
 ENV CONNECT_PLUGIN_PATH="/connect-plugins,/usr/share/java"
 
 # Clone the repo and build the project first. 
-# Or download the JAR file from Sonartype.
+# Or download the JAR file from Sonatype.
 COPY ./build/libs/*.jar /connect-plugins/kafka-connect-transformations/
 ```
 

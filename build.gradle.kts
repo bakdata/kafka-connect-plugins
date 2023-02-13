@@ -60,6 +60,21 @@ configure<JavaPluginExtension> {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
+configure<com.bakdata.gradle.SonatypeSettings> {
+    developers {
+        developer {
+            name.set("Ramin Gharib")
+            id.set("raminqaf")
+        }
+    }
+}
+
+configure<org.hildan.github.changelog.plugin.GitHubChangelogExtension> {
+    githubUser = "bakdata"
+    futureVersionTag = findProperty("changelog.releaseVersion")?.toString()
+    sinceTag = findProperty("changelog.sinceTag")?.toString()
+}
+
 tasks {
     compileJava {
         options.encoding = "UTF-8"
@@ -69,20 +84,5 @@ tasks {
     }
     test {
         useJUnitPlatform()
-    }
-
-    configure<com.bakdata.gradle.SonatypeSettings> {
-        developers {
-            developer {
-                name.set("Ramin Gharib")
-                id.set("raminqaf")
-            }
-        }
-    }
-
-    configure<org.hildan.github.changelog.plugin.GitHubChangelogExtension> {
-        githubUser = "bakdata"
-        futureVersionTag = findProperty("changelog.releaseVersion")?.toString()
-        sinceTag = findProperty("changelog.sinceTag")?.toString()
     }
 }
