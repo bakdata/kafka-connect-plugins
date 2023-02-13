@@ -57,6 +57,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @ExtendWith(SoftAssertionsExtension.class)
 class DropFieldTest {
     private static final String TEST_TOPIC = "test-topic";
+    private static final String MESSAGE = "This SMT can be applied only to records with schema.";
     @RegisterExtension
     final SchemaRegistryMockExtension schemaRegistryMock = new SchemaRegistryMockExtension();
     @InjectSoftAssertions
@@ -118,7 +119,7 @@ class DropFieldTest {
         try (final DropField<SinkRecord> dropField = new Value<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             assertThatThrownBy(() -> dropField.apply(sinkRecord)).isInstanceOf(ConnectException.class)
-                .hasMessage("This SMT can be applied to records with schema.");
+                .hasMessage(MESSAGE);
         }
     }
 
@@ -132,7 +133,7 @@ class DropFieldTest {
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             assertThatThrownBy(() -> dropField.apply(sinkRecord)).isInstanceOf(ConnectException.class)
-                .hasMessage("This SMT can be applied to records with schema.");
+                .hasMessage(MESSAGE);
         }
     }
 

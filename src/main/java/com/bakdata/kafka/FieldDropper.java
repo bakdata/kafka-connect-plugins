@@ -50,6 +50,7 @@ public final class FieldDropper {
     private static final int CACHE_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
+    private final Collection<Deque<String>> excludePaths;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -58,7 +59,12 @@ public final class FieldDropper {
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)));
+        final Collection<Deque<String>> excludePaths = new ArrayList<>();
+        for (final String excludePattern : exclude) {
+            final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
+            excludePaths.add(nestedFields);
+        }
+        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludePaths);
     }
 
 
@@ -72,19 +78,14 @@ public final class FieldDropper {
         if (this.exclude.isEmpty()) {
             return value;
         }
-        final Collection<Deque<String>> excludePaths = new ArrayList<>();
-        for (final String excludePattern : this.exclude) {
-            final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
-            excludePaths.add(nestedFields);
-        }
 
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = this.makeUpdatedSchema(value.schema(), excludePaths);
+            updatedSchema = this.makeUpdatedSchema(value.schema(), this.excludePaths);
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return this.getUpdatedStruct(value, updatedSchema, excludePaths);
+        return this.getUpdatedStruct(value, updatedSchema, this.excludePaths);
     }
 
     private Schema makeUpdatedSchema(final Schema schema, final Iterable<? extends Deque<String>> excludePaths) {

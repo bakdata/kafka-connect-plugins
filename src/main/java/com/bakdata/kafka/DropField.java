@@ -39,16 +39,13 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
 public abstract class DropField<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String EXCLUDE_FIELD = "exclude";
-    private static final ConfigDef CONFIG_DEF;
+
     private static final String PURPOSE = "field deletion";
-
-    static {
-        final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
+    private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
+    private static final ConfigDef
         CONFIG_DEF = new ConfigDef()
-            .define(EXCLUDE_FIELD, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM,
-                FIELD_DOCUMENTATION);
-    }
-
+        .define(EXCLUDE_FIELD, ConfigDef.Type.LIST, Collections.emptyList(), ConfigDef.Importance.MEDIUM,
+            FIELD_DOCUMENTATION);
     private FieldDropper fieldDropper;
 
     @Override
@@ -61,10 +58,10 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     public R apply(final R inputRecord) {
         if (this.operatingValue(inputRecord) == null) {
             return inputRecord;
-        } else if (this.operatingSchema(inputRecord) == null) {
-            throw new ConnectException("This SMT can be applied to records with schema.");
-        } else {
+        } else if (this.operatingSchema(inputRecord) != null) {
             return this.applyWithSchema(inputRecord);
+        } else {
+            throw new ConnectException("This SMT can be applied only to records with schema.");
         }
     }
 
