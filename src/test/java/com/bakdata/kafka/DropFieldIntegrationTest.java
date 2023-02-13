@@ -45,7 +45,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 import net.mguenther.kafka.junit.EmbeddedKafkaCluster;
 import net.mguenther.kafka.junit.KeyValue;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -59,15 +58,29 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-@Slf4j
 class DropFieldIntegrationTest {
-    public static final String EXCLUDE_PATH = "collections.complex_object.dropped_field";
+    private static final String EXCLUDE_PATH = "collections.complex_object.dropped_field";
     private static final String DROP_NESTED_FIELD = "DropField";
     private static final String TOPIC = "input";
     @RegisterExtension
     final SchemaRegistryMockExtension schemaRegistryMock = new SchemaRegistryMockExtension();
     private EmbeddedKafkaCluster kafkaCluster;
     private Path outputFile;
+
+    private static RecordCollection createValue() {
+        final PrimitiveObject primitiveObject = PrimitiveObject.newBuilder()
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(1234)
+            .build();
+        final NestedObject nestedObject = new NestedObject(primitiveObject, true);
+
+        final PrimitiveObject primitiveObject2 = PrimitiveObject.newBuilder()
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(5678)
+            .build();
+        final NestedObject nestedObject2 = new NestedObject(primitiveObject2, false);
+        return new RecordCollection(List.of(nestedObject, nestedObject2));
+    }
 
     @BeforeEach
     void setUp() throws IOException {
@@ -85,21 +98,9 @@ class DropFieldIntegrationTest {
 
     @Test
     void shouldDeleteNestedField() throws InterruptedException, IOException {
-        final PrimitiveObject primitiveObject =
-            PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(1234)
-                .build();
-        final NestedObject nestedObject = new NestedObject(primitiveObject, true);
+        final RecordCollection value = createValue();
 
-        final PrimitiveObject primitiveObject2 =
-            PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(5678)
-                .build();
-        final NestedObject nestedObject2 = new NestedObject(primitiveObject2, false);
-        final RecordCollection recordCollection = new RecordCollection(List.of(nestedObject, nestedObject2));
-        final List<KeyValue<String, RecordCollection>> records = singletonList(new KeyValue<>("k1", recordCollection));
+        final List<KeyValue<String, RecordCollection>> records = singletonList(new KeyValue<>("k1", value));
         this.kafkaCluster.send(to(TOPIC, records)
             .withAll(this.createProducerProperties())
             .build());
