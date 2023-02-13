@@ -131,9 +131,8 @@ class DropFieldTest {
                 schemaAndValue.value());
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
-            final SinkRecord newRecord = dropField.apply(sinkRecord);
-            this.softly.assertThat(newRecord.key()).isEqualTo("testKey".getBytes(StandardCharsets.UTF_8));
-            this.softly.assertThat(newRecord.value()).isNull();
+            assertThatThrownBy(() -> dropField.apply(sinkRecord)).isInstanceOf(ConnectException.class)
+                .hasMessage("This SMT can be applied to records with schema.");
         }
     }
 
