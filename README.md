@@ -1,31 +1,27 @@
-# Kafka Connect drop field(s) SMT
+[![Build status](https://travis-ci.org/bakdata/{{repo-name}}.svg?branch=master)](https://travis-ci.org/bakdata/{{repo-name}}/)
+[![Sonarcloud status](https://sonarcloud.io/api/project_badges/measure?project=bakdata-{{repo-name}}&metric=alert_status)](https://sonarcloud.io/dashboard?id=bakdata-{{repo-name}})
+[![Code coverage](https://sonarcloud.io/api/project_badges/measure?project=bakdata-{{repo-name}}&metric=coverage)](https://sonarcloud.io/dashboard?id=bakdata-{{repo-name}})
+[![Maven](https://img.shields.io/maven-central/v/com.bakdata.{{repo-name}}/{{repo-name}}.svg)](https://search.maven.org/search?q=g:com.bakdata.{{repo-name}}%20AND%20a:{{repo-name}}&core=gav)
+
+# Kafka Connect plugins
+
+A collection Kafka Connect plugins
+
+## SMT(s) 
+
+### Kafka Connect drop field(s) SMT
 
 The following provides usage information for the Kafka Connect `DropField` SMT.
 
-## Description
+#### Description
 
 Drop any (nested) field for a given path.
 
 Use the concrete transformation type designed for the record key (`org.apache.kafka.connect.transforms.DropField$Key`)
 or value (`org.apache.kafka.connect.transforms.DropField$Value`).
 
-## Installation
 
-You can install this SMT by adding the JAR file to your Kafka Connect image. For example:
-
-```dockerfile
-FROM confluentinc/cp-kafka-connect:latest
-
-# Install your source/sink connector(s)
-# ...
-
-ENV CONNECT_PLUGIN_PATH="/connect-plugins,/usr/share/java"
-
-# Clone the repo and build the project first. 
-COPY ./build/libs/kafka-connect-drop-field-*.jar /connect-plugins/kafka-connect-transformations/
-```
-
-## Examples
+#### Examples
 
 These examples show how to configure and use `DropField`.
 
@@ -83,8 +79,50 @@ The value would transform into this:
 }
 ```
 
-## Properties
+#### Properties
 
 | Name      | Description                                  | Type | Default    | Valid Values                                                                                     | Importance |
 |-----------|----------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
 | `exclued` | Fields to exclude from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
+
+
+## Installation
+
+You can install the SMT by adding the JAR file to your Kafka Connect image. For example:
+
+```dockerfile
+FROM confluentinc/cp-kafka-connect:latest
+
+# Install your source/sink connector(s)
+# ...
+
+ENV CONNECT_PLUGIN_PATH="/connect-plugins,/usr/share/java"
+
+# Clone the repo and build the project first. 
+# Or download the JAR file from Sonartype.
+COPY ./build/libs/*.jar /connect-plugins/kafka-connect-transformations/
+```
+## Development
+
+If you want to contribute to this project, you can simply clone the repository and build it via Gradle.
+All dependencies should be included in the Gradle files, there are no external prerequisites.
+
+```bash
+clone >git git@github.com:bakdata/kafka-connect-plugins.git
+kafka-connect-plugins >cd && ./gradlew build
+
+```
+
+Please note, that we have [code styles](https://github.com/bakdata/bakdata-code-styles) for Java.
+They are basically the Google style guide, with some small modifications.
+
+## Contributing
+
+We are happy if you want to contribute to this project.
+If you find any bugs or have suggestions for improvements, please open an issue.
+We are also happy to accept your PRs.
+Just open an issue beforehand and let us know what you want to do and why.
+
+## License
+This project is licensed under the MIT license.
+Have a look at the [LICENSE](https://github.com/bakdata/{{repo-name}}/blob/master/LICENSE) for more details.

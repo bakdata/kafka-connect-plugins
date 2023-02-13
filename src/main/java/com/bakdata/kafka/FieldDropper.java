@@ -24,11 +24,12 @@
 
 package com.bakdata.kafka;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -63,11 +64,6 @@ public final class FieldDropper {
         return createFieldDropper(Collections.emptyList());
     }
 
-    private static boolean isNotEndOfExcludePath(final Collection<String> excludePath, final String excludeField,
-        final Field field) {
-        return field.name().equals(excludeField) && excludePath.size() != 1;
-    }
-
     /**
      * This method creates the updated schema and then inserts the values based on the give exclude paths.
      *
@@ -78,9 +74,9 @@ public final class FieldDropper {
         if (this.exclude.isEmpty()) {
             return value;
         }
-        final Collection<LinkedList<String>> excludePaths = new ArrayList<>();
+        final Collection<Deque<String>> excludePaths = new ArrayList<>();
         for (final String excludePattern : this.exclude) {
-            final LinkedList<String> nestedFields = new LinkedList<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
+            final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
             excludePaths.add(nestedFields);
         }
 
@@ -90,96 +86,88 @@ public final class FieldDropper {
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return this.getUpdatedStruct(value, updatedSchema, new ArrayList<>(excludePaths));
+        return this.getUpdatedStruct(value, updatedSchema, excludePaths);
     }
 
-    private Schema makeUpdatedSchema(final Schema schema, Iterable<? extends LinkedList<String>> excludePaths) {
+    private Schema makeUpdatedSchema(final Schema schema, final Iterable<? extends Deque<String>> excludePaths) {
         final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        for (final LinkedList<String> excludePattern : excludePaths) {
-            this.extractSchema(schema, builder, new LinkedList<>(excludePattern));
+        for (final Deque<String> excludePattern : excludePaths) {
+            this.extractSchema(schema, builder, excludePattern.size(), excludePattern.peekLast());
         }
         return builder.build();
     }
 
     private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
-        final Iterable<? extends LinkedList<String>> excludePaths) {
+        final Iterable<? extends Deque<String>> excludePaths) {
         final Struct updatedValue = new Struct(updatedSchema);
-        for (final LinkedList<String> excludePattern : excludePaths) {
-            this.updateValues(value, updatedValue, excludePattern);
+        for (final Deque<String> excludePattern : excludePaths) {
+            this.updateValues(value, updatedValue, excludePattern.size(), excludePattern.peekLast());
         }
         return updatedValue;
     }
 
     private void extractSchema(final Schema schema, final SchemaBuilder schemaBuilder,
-        final LinkedList<String> nestedFields) {
-        LinkedList<String> excludePath = nestedFields;
-        for (final String excludeField : excludePath) {
-            final List<String> tmpList = new LinkedList<>(excludePath);
-            for (final Field field : schema.schema().fields()) {
-                if (isNotEndOfExcludePath(excludePath, excludeField, field)) {
-                    excludePath.removeFirst();
-                    switch (field.schema().type()) {
-                        case ARRAY:
-                            final Schema valueSchema = field.schema().valueSchema();
-                            final SchemaBuilder arrayStructSchema = SchemaBuilder.struct().name(valueSchema.name());
-                            final SchemaBuilder arraySchemaBuilder = SchemaBuilder
-                                .array(arrayStructSchema)
-                                .name(field.name());
-                            this.extractSchema(valueSchema, arrayStructSchema, excludePath);
-                            schemaBuilder.field(field.name(), arraySchemaBuilder.build());
-                            break;
-                        case STRUCT:
-                            final SchemaBuilder structSchema = SchemaBuilder.struct().name(field.name());
-                            this.extractSchema(field.schema(), structSchema, excludePath);
-                            schemaBuilder.field(field.name(), structSchema.schema());
-                            break;
-                        default:
-                            throw new RuntimeException("The given path does not exist");
-                    }
-                } else if (!field.name().equals(excludeField)) {
-                    schemaBuilder.field(field.name(), field.schema());
+        final int excludePathDepth, final String lastElementOfExcludePath) {
+        int currentPathIndex = excludePathDepth;
+        for (final Field field : schema.schema().fields()) {
+            if (currentPathIndex != 1) {
+                currentPathIndex--;
+                switch (field.schema().type()) {
+                    case ARRAY:
+                        final Schema valueSchema = field.schema().valueSchema();
+                        final SchemaBuilder arrayStructSchema = SchemaBuilder.struct().name(valueSchema.name());
+                        final SchemaBuilder arraySchemaBuilder = SchemaBuilder
+                            .array(arrayStructSchema)
+                            .name(field.name());
+                        this.extractSchema(valueSchema, arrayStructSchema, currentPathIndex, lastElementOfExcludePath);
+                        schemaBuilder.field(field.name(), arraySchemaBuilder.build());
+                        break;
+                    case STRUCT:
+                        final SchemaBuilder structSchema = SchemaBuilder.struct().name(field.name());
+                        this.extractSchema(field.schema(), structSchema, currentPathIndex, lastElementOfExcludePath);
+                        schemaBuilder.field(field.name(), structSchema.schema());
+                        break;
+                    default:
+                        schemaBuilder.field(field.name(), field.schema());
                 }
+                currentPathIndex++;
+            } else if (!field.name().equals(lastElementOfExcludePath)) {
+                schemaBuilder.field(field.name(), field.schema());
             }
-            excludePath = new LinkedList<>(tmpList);
         }
     }
 
-    private void updateValues(final Struct value, final Struct updatedValue, final LinkedList<String> nestedFields) {
-        LinkedList<String> excludePath = nestedFields;
-        for (final String excludeField : excludePath) {
-            final List<String> tmpList = new LinkedList<>(excludePath);
-            for (final Field field : value.schema().fields()) {
-                if (isNotEndOfExcludePath(excludePath, excludeField, field)) {
-                    switch (field.schema().type()) {
-                        case ARRAY:
-                            final Iterable<Struct> arrayValues = value.getArray(field.name());
-                            final Collection<Struct> values = new ArrayList<>();
-                            for (final Struct arrayValue : arrayValues) {
-                                final Struct updatedNestedStruct =
-                                    new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
-                                excludePath.removeFirst();
-                                this.updateValues(arrayValue, updatedNestedStruct, excludePath);
-                                excludePath = new LinkedList<>(tmpList);
-                                values.add(updatedNestedStruct);
-                            }
-                            updatedValue.put(field.name(), values);
-                            break;
-                        case STRUCT:
-                            final Struct struct = value.getStruct(field.name());
+    private void updateValues(final Struct value, final Struct updatedValue, final int excludePathDepth,
+        final String lastElementOfExcludePath) {
+        int currentPathIndex = excludePathDepth;
+        for (final Field field : value.schema().fields()) {
+            if (currentPathIndex != 1) {
+                currentPathIndex--;
+                switch (field.schema().type()) {
+                    case ARRAY:
+                        final Iterable<Struct> arrayValues = value.getArray(field.name());
+                        final Collection<Struct> values = new ArrayList<>();
+                        for (final Struct arrayValue : arrayValues) {
                             final Struct updatedNestedStruct =
-                                new Struct(updatedValue.schema().field(field.name()).schema());
-                            excludePath.removeFirst();
-                            this.updateValues(struct, updatedNestedStruct, excludePath);
-                            excludePath = new LinkedList<>(tmpList);
-                            updatedValue.put(field.name(), updatedNestedStruct);
-                            break;
-                        default:
-                            throw new RuntimeException("The given path does not exist");
-                    }
-
-                } else if (!field.name().equals(excludeField)) {
-                    updatedValue.put(field.name(), value.get(field));
+                                new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
+                            this.updateValues(arrayValue, updatedNestedStruct, currentPathIndex, lastElementOfExcludePath);
+                            values.add(updatedNestedStruct);
+                        }
+                        updatedValue.put(field.name(), values);
+                        break;
+                    case STRUCT:
+                        final Struct struct = value.getStruct(field.name());
+                        final Struct updatedNestedStruct =
+                            new Struct(updatedValue.schema().field(field.name()).schema());
+                        this.updateValues(struct, updatedNestedStruct, currentPathIndex, lastElementOfExcludePath);
+                        updatedValue.put(field.name(), updatedNestedStruct);
+                        break;
+                    default:
+                        updatedValue.put(field.name(), value.get(field));
                 }
+                currentPathIndex++;
+            } else if (!field.name().equals(lastElementOfExcludePath)) {
+                updatedValue.put(field.name(), value.get(field));
             }
         }
     }

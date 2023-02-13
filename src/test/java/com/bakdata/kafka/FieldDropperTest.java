@@ -24,18 +24,22 @@
 
 package com.bakdata.kafka;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.Collections;
 import java.util.List;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-// TODO: Use SoftAssertions
+@ExtendWith(SoftAssertionsExtension.class)
 class FieldDropperTest {
+    @InjectSoftAssertions
+    private SoftAssertions softly;
 
     /**
      * Before:
@@ -89,9 +93,128 @@ class FieldDropperTest {
         final Struct newStruct = computerStruct.updateStruct(complexObject);
 
         final Field complexField = newStruct.schema().field("complex_field");
-        assertThat(complexField).isNotNull();
-        assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
-        assertThat(newStruct.getBoolean("boolean_field")).isTrue();
+        this.softly.assertThat(complexField).isNotNull();
+        this.softly.assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.getBoolean("boolean_field")).isTrue();
+    }
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *              "boolean_field": true,
+     *              "complex_field": {
+     *                  "kept_field": 1234
+     *              }
+     *          }
+     *     }
+     * </pre>
+     *
+     * Exclude path: boolean_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *              "complex_field": {
+     *                  "kept_field": 1234
+     *              },
+     *          }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropNotNestedField() {
+        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("boolean_field"));
+        final Schema primitiveSchema = SchemaBuilder
+            .struct()
+            .name("PrimitiveObject")
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct primitiveObject = new Struct(primitiveSchema);
+        primitiveObject.put("kept_field", 1234);
+
+        final Schema complexSchema = SchemaBuilder.struct()
+            .name("complexObject")
+            .field("boolean_field", Schema.BOOLEAN_SCHEMA)
+            .field("complex_field", primitiveSchema)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("boolean_field", true);
+        complexObject.put("complex_field", primitiveObject);
+
+        final Struct newStruct = computerStruct.updateStruct(complexObject);
+
+        final Field complexField = newStruct.schema().field("complex_field");
+        this.softly.assertThat(complexField).isNotNull();
+        this.softly.assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.schema().field("boolean_field")).isNull();
+
+    }
+
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *              "dropped_field": "This field should stay here",
+     *              "complex_field": {
+     *                  "dropped_field": "This field will be dropped",
+     *                  "kept_field": 1234
+     *              }
+     *          }
+     *     }
+     * </pre>
+     *
+     * Exclude path: complex_field.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *              "dropped_field": "This field should stay here",
+     *              "complex_field": {
+     *                  "kept_field": 1234
+     *              },
+     *          }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropCorrectFieldIfNamesAreDuplicate() {
+        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
+        final Schema primitiveSchema = SchemaBuilder
+            .struct()
+            .name("PrimitiveObject")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct primitiveObject = new Struct(primitiveSchema);
+        primitiveObject.put("dropped_field", "This field will be dropped");
+        primitiveObject.put("kept_field", 1234);
+
+        final Schema complexSchema = SchemaBuilder.struct()
+            .name("complexObject")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("complex_field", primitiveSchema)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("dropped_field", "This field should stay here");
+        complexObject.put("complex_field", primitiveObject);
+
+        final Struct newStruct = computerStruct.updateStruct(complexObject);
+
+        final Field complexField = newStruct.schema().field("complex_field");
+        this.softly.assertThat(complexField).isNotNull();
+        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.schema().field("dropped_field")).isNotNull();
     }
 
     /**
@@ -127,18 +250,20 @@ class FieldDropperTest {
         final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
         final Schema innerSchema = SchemaBuilder
             .struct()
-            .name("testLog")
+            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
-            .field("kept_field", Schema.INT32_SCHEMA);
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
 
         final Struct innerStruct = new Struct(innerSchema);
         innerStruct.put("dropped_field", "This value will be dropped.");
         innerStruct.put("kept_field", 1234);
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("nested_object")
+            .name("NestedObject")
             .field("complex_field", innerSchema)
-            .field("boolean_field", Schema.BOOLEAN_SCHEMA);
+            .field("boolean_field", Schema.BOOLEAN_SCHEMA)
+            .build();
 
         final Struct complexObject = new Struct(complexSchema);
         complexObject.put("complex_field", innerStruct);
@@ -147,11 +272,11 @@ class FieldDropperTest {
         final Struct newStruct = computerStruct.updateStruct(complexObject);
 
         final Struct complexField = newStruct.getStruct("complex_field");
-        assertThat(complexField.schema().fields()).hasSize(1);
-        assertThat(complexField.schema().field("kept_field")).isNotNull();
-        assertThat(complexField.schema().field("dropped_field")).isNull();
-        assertThat(complexField.getInt32("kept_field")).isEqualTo(1234);
-        assertThat(newStruct.get("boolean_field")).isEqualTo(true);
+        this.softly.assertThat(complexField.schema().fields()).hasSize(1);
+        this.softly.assertThat(complexField.schema().field("kept_field")).isNotNull();
+        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(complexField.getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.get("boolean_field")).isEqualTo(true);
     }
 
 
@@ -204,8 +329,8 @@ class FieldDropperTest {
         final Struct newStruct = computerStruct.updateStruct(complexObject);
 
         final Field complexField = newStruct.schema().field("complex_field");
-        assertThat(complexField).isNull();
-        assertThat(newStruct.getBoolean("boolean_field")).isTrue();
+        this.softly.assertThat(complexField).isNull();
+        this.softly.assertThat(newStruct.getBoolean("boolean_field")).isTrue();
     }
 
     /**
@@ -286,18 +411,19 @@ class FieldDropperTest {
         final Struct newStruct = computerStruct.updateStruct(complexObject);
 
         final Field collectionField = newStruct.schema().field("collections");
-        assertThat(collectionField).isNotNull();
-        assertThat(collectionField.schema().valueSchema().fields()).hasSize(1);
-        assertThat(newStruct.getArray("collections")).hasSize(2);
-        assertThat(newStruct.getArray("collections")).first().isInstanceOfSatisfying(Struct.class, primitiveStruct -> {
-            assertThat(primitiveStruct.getInt32("kept_field")).isEqualTo(1234);
-            assertThat(primitiveStruct.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(collectionField).isNotNull();
+        this.softly.assertThat(collectionField.schema().valueSchema().fields()).hasSize(1);
+        this.softly.assertThat(newStruct.getArray("collections")).hasSize(2).satisfies(array -> {
+            this.softly.assertThat(array).first().isInstanceOfSatisfying(Struct.class, primitiveStruct -> {
+                this.softly.assertThat(primitiveStruct.getInt32("kept_field")).isEqualTo(1234);
+                this.softly.assertThat(primitiveStruct.schema().field("dropped_field")).isNull();
+            });
+            this.softly.assertThat(array.get(1)).isInstanceOfSatisfying(Struct.class, primitiveStruct -> {
+                this.softly.assertThat(primitiveStruct.getInt32("kept_field")).isEqualTo(5678);
+                this.softly.assertThat(primitiveStruct.schema().field("dropped_field")).isNull();
+            });
         });
-        assertThat(newStruct.getArray("collections").get(1)).isInstanceOfSatisfying(Struct.class, primitiveStruct -> {
-            assertThat(primitiveStruct.getInt32("kept_field")).isEqualTo(5678);
-            assertThat(primitiveStruct.schema().field("dropped_field")).isNull();
-        });
-        assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
+        this.softly.assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
     }
 
 
@@ -368,8 +494,8 @@ class FieldDropperTest {
 
         final Struct newStruct = computerStruct.updateStruct(complexObject);
 
-        assertThat(newStruct.schema().field("collections")).isNull();
-        assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
+        this.softly.assertThat(newStruct.schema().field("collections")).isNull();
+        this.softly.assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
     }
 
     /**
@@ -474,22 +600,21 @@ class FieldDropperTest {
         final Struct newStruct = computerStruct.updateStruct(recordCollection);
 
         final Field collectionField = newStruct.schema().field("collections");
-        assertThat(collectionField).isNotNull();
 
-        assertThat(newStruct.getArray("collections")).hasSize(2);
-
-        assertThat(newStruct.getArray("collections")).first().isInstanceOfSatisfying(Struct.class, struct -> {
-            assertThat(struct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
-            assertThat(struct.getStruct("complex_field").schema().field("dropped_field")).isNull();
-            assertThat(struct.getBoolean("boolean_field")).isTrue();
+        this.softly.assertThat(newStruct.getInt32("primitive_field")).isEqualTo(9876);
+        this.softly.assertThat(collectionField).isNotNull();
+        this.softly.assertThat(newStruct.getArray("collections")).hasSize(2).satisfies(array -> {
+            this.softly.assertThat(array).first().isInstanceOfSatisfying(Struct.class, struct -> {
+                this.softly.assertThat(struct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
+                this.softly.assertThat(struct.getStruct("complex_field").schema().field("dropped_field")).isNull();
+                this.softly.assertThat(struct.getBoolean("boolean_field")).isTrue();
+            });
+            this.softly.assertThat(array.get(1)).isInstanceOfSatisfying(Struct.class, struct -> {
+                this.softly.assertThat(struct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(5678);
+                this.softly.assertThat(struct.getStruct("complex_field").schema().field("dropped_field")).isNull();
+                this.softly.assertThat(struct.getBoolean("boolean_field")).isFalse();
+            });
         });
-
-        assertThat(newStruct.getArray("collections").get(1)).isInstanceOfSatisfying(Struct.class, struct -> {
-            assertThat(struct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(5678);
-            assertThat(struct.getStruct("complex_field").schema().field("dropped_field")).isNull();
-            assertThat(struct.getBoolean("boolean_field")).isFalse();
-        });
-
-        assertThat(newStruct.getInt32("primitive_field")).isEqualTo(9876);
+        this.softly.assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
     }
 }
