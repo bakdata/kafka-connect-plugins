@@ -24,11 +24,10 @@
 
 package com.bakdata.kafka;
 
-import java.util.ArrayDeque;
+import static com.bakdata.kafka.Exclude.createListExclude;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public final class FieldDropper {
     private static final int CACHE_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private final Collection<Deque<String>> excludePaths;
+    private final Iterable<Exclude> excludePaths;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -59,12 +58,8 @@ public final class FieldDropper {
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        final Collection<Deque<String>> excludePaths = new ArrayList<>();
-        for (final String excludePattern : exclude) {
-            final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
-            excludePaths.add(nestedFields);
-        }
-        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludePaths);
+        final Iterable<Exclude> excludes = createListExclude(exclude);
+        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludes);
     }
 
 
@@ -88,31 +83,31 @@ public final class FieldDropper {
         return this.getUpdatedStruct(value, updatedSchema, this.excludePaths);
     }
 
-    private Schema makeUpdatedSchema(final Schema schema, final Iterable<? extends Deque<String>> excludePaths) {
+    private Schema makeUpdatedSchema(final Schema schema, final Iterable<Exclude> excludePaths) {
         final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        for (final Deque<String> excludePattern : excludePaths) {
-            this.extractSchema(schema, builder, excludePattern.size(), excludePattern.peekLast());
+        for (final Exclude excludePattern : excludePaths) {
+            this.extractSchema(schema, builder, excludePattern);
         }
         return builder.build();
     }
 
     private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
-        final Iterable<? extends Deque<String>> excludePaths) {
+        final Iterable<Exclude> excludePaths) {
         final Struct updatedValue = new Struct(updatedSchema);
-        for (final Deque<String> excludePattern : excludePaths) {
-            this.updateValues(value, updatedValue, excludePattern.size(), excludePattern.peekLast());
+        for (final Exclude exclude : excludePaths) {
+            this.updateValues(value, updatedValue, exclude);
         }
         return updatedValue;
     }
 
-    private void extractSchema(final Schema schema, final SchemaBuilder schemaBuilder,
-        final int excludePathDepth, final String lastElementOfExcludePath) {
-        int currentPathIndex = excludePathDepth;
-        for (final Field field : schema.schema().fields()) {
+    private void extractSchema(final Schema oldSchema, final SchemaBuilder updatedSchema, final Exclude exclude) {
+        final int currentPathIndex = exclude.getDepth();
+        final String lastElement = exclude.getLastElement();
+        for (final Field field : oldSchema.schema().fields()) {
             final String fieldName = field.name();
             final Schema fieldSchema = field.schema();
             if (currentPathIndex != 1) {
-                currentPathIndex--;
+                exclude.moveDeeperIntoPath();
                 switch (fieldSchema.type()) {
                     case ARRAY:
                         final Schema valueSchema = fieldSchema.valueSchema();
@@ -120,64 +115,61 @@ public final class FieldDropper {
                         final SchemaBuilder arraySchemaBuilder = SchemaBuilder
                             .array(arrayStructSchema)
                             .name(fieldName);
-                        this.extractSchema(valueSchema, arrayStructSchema, currentPathIndex, lastElementOfExcludePath);
-                        schemaBuilder.field(fieldName, arraySchemaBuilder.build());
+                        this.extractSchema(valueSchema, arrayStructSchema, exclude);
+                        updatedSchema.field(fieldName, arraySchemaBuilder.build());
                         break;
                     case STRUCT:
                         final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
-                        this.extractSchema(fieldSchema, structSchema, currentPathIndex, lastElementOfExcludePath);
-                        schemaBuilder.field(fieldName, structSchema.schema());
+                        this.extractSchema(fieldSchema, structSchema, exclude);
+                        updatedSchema.field(fieldName, structSchema.schema());
                         break;
                     default:
-                        schemaBuilder.field(fieldName, fieldSchema);
+                        updatedSchema.field(fieldName, fieldSchema);
                 }
-                currentPathIndex++;
-            } else if (!fieldName.equals(lastElementOfExcludePath)) {
-                schemaBuilder.field(fieldName, fieldSchema);
+                exclude.moveHigherIntoPath();
+            } else if (!fieldName.equals(lastElement)) {
+                updatedSchema.field(fieldName, fieldSchema);
             }
         }
     }
 
-    private void updateValues(final Struct value, final Struct updatedValue, final int excludePathDepth,
-        final String lastElementOfExcludePath) {
-        int currentPathIndex = excludePathDepth;
-        for (final Field field : value.schema().fields()) {
+    private void updateValues(final Struct oldValue, final Struct updatedValue, final Exclude exclude) {
+        final int currentPathIndex = exclude.getDepth();
+        final String lastElement = exclude.getLastElement();
+        for (final Field field : oldValue.schema().fields()) {
             final String fieldName = field.name();
             if (currentPathIndex != 1) {
-                currentPathIndex--;
+                exclude.moveDeeperIntoPath();
                 switch (field.schema().type()) {
                     case ARRAY:
-                        final Iterable<Struct> arrayValues = value.getArray(fieldName);
+                        final Iterable<Struct> arrayValues = oldValue.getArray(fieldName);
                         final Collection<Struct> updatedArrayValues =
-                            this.addArrayValues(updatedValue, lastElementOfExcludePath, currentPathIndex, field,
-                                arrayValues);
+                            this.addArrayValues(updatedValue, field, arrayValues, exclude);
                         updatedValue.put(fieldName, updatedArrayValues);
                         break;
                     case STRUCT:
-                        final Struct struct = value.getStruct(fieldName);
+                        final Struct struct = oldValue.getStruct(fieldName);
                         final Struct updatedNestedStruct = new Struct(updatedValue.schema().field(fieldName).schema());
-                        this.updateValues(struct, updatedNestedStruct, currentPathIndex, lastElementOfExcludePath);
+                        this.updateValues(struct, updatedNestedStruct, exclude);
                         updatedValue.put(fieldName, updatedNestedStruct);
                         break;
                     default:
-                        updatedValue.put(fieldName, value.get(field));
+                        updatedValue.put(fieldName, oldValue.get(field));
                 }
-                currentPathIndex++;
-            } else if (!fieldName.equals(lastElementOfExcludePath)) {
-                updatedValue.put(fieldName, value.get(field));
+                exclude.moveHigherIntoPath();
+            } else if (!fieldName.equals(lastElement)) {
+                updatedValue.put(fieldName, oldValue.get(field));
             }
         }
     }
 
-    private Collection<Struct> addArrayValues(final Struct updatedValue, final String lastElementOfExcludePath,
-        final int currentPathIndex,
-        final Field field, final Iterable<? extends Struct> arrayValues) {
+    private Collection<Struct> addArrayValues(final Struct updatedValue,
+        final Field field, final Iterable<? extends Struct> arrayValues, final Exclude exclude) {
         final Collection<Struct> values = new ArrayList<>();
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
                 new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
-            this.updateValues(arrayValue, updatedNestedStruct, currentPathIndex,
-                lastElementOfExcludePath);
+            this.updateValues(arrayValue, updatedNestedStruct, exclude);
             values.add(updatedNestedStruct);
         }
         return values;

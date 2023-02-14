@@ -1,0 +1,64 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 bakdata
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package com.bakdata.kafka;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.regex.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
+public class Exclude {
+    private static final Pattern DOT_REGEX = Pattern.compile("\\.");
+    private int depth;
+    private final String lastElement;
+
+    private static Exclude createExclude(final CharSequence exclude) {
+        final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
+        return new Exclude(nestedFields.size(), nestedFields.peekLast());
+    }
+
+    public static Iterable<Exclude> createListExclude(final Iterable<String> excludes) {
+        final Collection<Exclude> excludePaths = new ArrayList<>();
+        for (final String excludePattern : excludes) {
+            final Exclude exclude = createExclude(excludePattern);
+            excludePaths.add(exclude);
+        }
+        return excludePaths;
+    }
+
+    public void moveDeeperIntoPath() {
+        this.depth--;
+    }
+
+    public void moveHigherIntoPath() {
+        this.depth++;
+    }
+}

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.data.Struct;
@@ -132,7 +133,8 @@ class DropFieldTest {
                 schemaAndValue.value());
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
-            assertThatThrownBy(() -> dropField.apply(sinkRecord)).isInstanceOf(ConnectException.class)
+            assertThatThrownBy(() -> dropField.apply(sinkRecord))
+                .isInstanceOf(ConnectException.class)
                 .hasMessage(MESSAGE);
         }
     }
@@ -146,38 +148,55 @@ class DropFieldTest {
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "collections.complex_object.dropped_field"));
             final SinkRecord newRecord = dropField.apply(sinkRecord);
-            this.softly.assertThat(newRecord.key()).isInstanceOfSatisfying(Struct.class, newKey ->
-                this.softly.assertThat(newKey.getArray("collections")).hasSize(2).satisfies(array -> {
-                    this.softly.assertThat(array).first().isInstanceOfSatisfying(Struct.class, struct -> {
-                        this.softly.assertThat(struct.getStruct("complex_object").getInt32("kept_field"))
-                            .isEqualTo(1234);
-                        this.softly.assertThat(struct.getStruct("complex_object").schema().field("dropped_field"))
-                            .isNull();
-                        this.softly.assertThat(struct.getBoolean("boolean_field")).isTrue();
-                    });
-                    this.softly.assertThat(array.get(1)).isInstanceOfSatisfying(Struct.class, struct -> {
-                        this.softly.assertThat(struct.getStruct("complex_object").getInt32("kept_field"))
-                            .isEqualTo(5678);
-                        this.softly.assertThat(struct.getStruct("complex_object").schema().field("dropped_field"))
-                            .isNull();
-                        this.softly.assertThat(struct.getBoolean("boolean_field")).isFalse();
-                    });
-                }));
+            this.softly.assertThat(newRecord.key())
+                .isInstanceOfSatisfying(Struct.class, newKey ->
+                    this.softly.assertThat(newKey.getArray("collections"))
+                        .hasSize(2)
+                        .satisfies(array -> {
+                                this.softly.assertThat(array)
+                                    .first()
+                                    .isInstanceOfSatisfying(Struct.class, struct -> {
+                                        final Integer fieldValue = struct
+                                            .getStruct("complex_object")
+                                            .getInt32("kept_field");
+                                        this.softly.assertThat(fieldValue).isEqualTo(1234);
+                                        this.softly.assertThat(struct.getBoolean("boolean_field")).isTrue();
+                                    });
+                                this.softly.assertThat(array.get(1))
+                                    .isInstanceOfSatisfying(Struct.class, struct -> {
+                                            final Integer fieldValue = struct
+                                                .getStruct("complex_object")
+                                                .getInt32("kept_field");
+                                            this.softly.assertThat(fieldValue).isEqualTo(5678);
+
+                                            this.softly.assertThat(struct.getBoolean("boolean_field")).isFalse();
+                                        }
+                                    );
+                            }
+                        ).allSatisfy(array -> this.softly.assertThat(array)
+                            .isInstanceOfSatisfying(Struct.class, struct -> {
+                                    final Field field = struct
+                                        .getStruct("complex_object")
+                                        .schema()
+                                        .field("dropped_field");
+                                    this.softly.assertThat(field).isNull();
+                                }
+                            )
+                        )
+                );
             this.softly.assertThat(newRecord.value()).isEqualTo("testKey".getBytes(StandardCharsets.UTF_8));
         }
     }
 
     private <T extends SpecificRecord> SchemaAndValue getSinkRecord(final boolean isKey, final T primitiveObject) {
-        final Converter avroConverter = new AvroConverter();
         final Map<String, String> schemaRegistryUrlConfig =
             Map.of(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
-        avroConverter.configure(schemaRegistryUrlConfig, isKey);
-        final byte[] valueBytes;
         try (final Serializer<T> serializer = new SpecificAvroSerializer<>()) {
+            final Converter avroConverter = new AvroConverter();
+            avroConverter.configure(schemaRegistryUrlConfig, isKey);
             serializer.configure(schemaRegistryUrlConfig, isKey);
-            valueBytes = serializer.serialize(TEST_TOPIC, primitiveObject);
+            final byte[] valueBytes = serializer.serialize(TEST_TOPIC, primitiveObject);
+            return avroConverter.toConnectData(TEST_TOPIC, valueBytes);
         }
-        return avroConverter.toConnectData(TEST_TOPIC, valueBytes);
     }
-
 }
