@@ -33,6 +33,9 @@ import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * An exclude object holding the logic of the exclude path.
+ */
 @AllArgsConstructor
 @Getter
 public class Exclude {
@@ -40,11 +43,13 @@ public class Exclude {
     private int depth;
     private final String lastElement;
 
-    private static Exclude createExclude(final CharSequence exclude) {
-        final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
-        return new Exclude(nestedFields.size(), nestedFields.peekLast());
-    }
 
+    /**
+     * A static constructor that delivers a list of exclude objects
+     *
+     * @param excludes List of exclude paths given by the user
+     * @return List of exclude objects
+     */
     public static Iterable<Exclude> createListExclude(final Iterable<String> excludes) {
         final Collection<Exclude> excludePaths = new ArrayList<>();
         for (final String excludePattern : excludes) {
@@ -54,11 +59,22 @@ public class Exclude {
         return excludePaths;
     }
 
+    /**
+     * Decreases the depth of the exclude path
+     */
     public void moveDeeperIntoPath() {
         this.depth--;
     }
 
+    /**
+     * Increases the depth of the exclude path
+     */
     public void moveHigherIntoPath() {
         this.depth++;
+    }
+
+    private static Exclude createExclude(final CharSequence exclude) {
+        final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
+        return new Exclude(nestedFields.size(), nestedFields.peekLast());
     }
 }
