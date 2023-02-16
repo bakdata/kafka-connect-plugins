@@ -37,13 +37,13 @@ public interface NestedIterator {
     void onDefault(final Field field);
     void onLastElementPath(final Field field);
 
-    default void iterate(final Exclude exclude) {
-        final int currentPathIndex = exclude.getDepth();
+    default void iterate(final Path path) {
+        final int currentPathIndex = path.getDepth();
         for (final Field field : this.fields()) {
             if (currentPathIndex == 1) {
                 this.onLastElementPath(field);
             } else {
-                exclude.moveDeeperIntoPath();
+                path.moveDeeperIntoPath();
                 switch (field.schema().type()) {
                     case ARRAY:
                         this.onArray(field);
@@ -54,7 +54,7 @@ public interface NestedIterator {
                     default:
                         this.onDefault(field);
                 }
-                exclude.moveHigherIntoPath();
+                path.moveHigherIntoPath();
             }
         }
     }

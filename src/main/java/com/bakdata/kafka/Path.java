@@ -39,7 +39,7 @@ import lombok.Getter;
  */
 @AllArgsConstructor
 @Getter
-public class Exclude {
+public class Path {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private int depth;
     private final String lastElement;
@@ -51,13 +51,13 @@ public class Exclude {
      * @param excludes List of exclude paths given by the user
      * @return List of exclude objects
      */
-    public static Iterable<Exclude> createListExclude(final List<String> excludes) {
-        final Collection<Exclude> excludePaths = new ArrayList<>();
+    public static Iterable<Path> createPathList(final List<String> excludes) {
+        final Collection<Path> pathPaths = new ArrayList<>();
         for (final String excludePattern : excludes) {
-            final Exclude exclude = createExclude(excludePattern);
-            excludePaths.add(exclude);
+            final Path path = createPath(excludePattern);
+            pathPaths.add(path);
         }
-        return excludePaths;
+        return pathPaths;
     }
 
     /**
@@ -74,8 +74,8 @@ public class Exclude {
         this.depth++;
     }
 
-    private static Exclude createExclude(final CharSequence exclude) {
+    private static Path createPath(final CharSequence exclude) {
         final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
-        return new Exclude(nestedFields.size(), nestedFields.peekLast());
+        return new Path(nestedFields.size(), nestedFields.peekLast());
     }
 }

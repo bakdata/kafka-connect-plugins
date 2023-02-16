@@ -33,7 +33,7 @@ import org.apache.kafka.connect.data.Struct;
 
 @AllArgsConstructor
 public class DeleteValue implements NestedIterator {
-    private final Exclude exclude;
+    private final Path path;
     private Struct oldValue;
     @Getter
     private Struct updatedValue;
@@ -48,7 +48,7 @@ public class DeleteValue implements NestedIterator {
         final String fieldName = field.name();
         final Iterable<Struct> arrayValues = this.oldValue.getArray(fieldName);
         final Collection<Struct> updatedArrayValues =
-            this.addArrayValues(this.updatedValue, field, arrayValues, this.exclude);
+            this.addArrayValues(this.updatedValue, field, arrayValues, this.path);
         this.updatedValue.put(fieldName, updatedArrayValues);
     }
 
@@ -61,7 +61,7 @@ public class DeleteValue implements NestedIterator {
         this.oldValue = structWithValue;
         final Struct upperStruct = this.updatedValue;
         this.updatedValue = updatedNestedStruct;
-        this.iterate(this.exclude);
+        this.iterate(this.path);
         this.oldValue = oldUpperStruct;
         this.updatedValue = upperStruct;
         this.updatedValue.put(fieldName, updatedNestedStruct);
@@ -74,13 +74,13 @@ public class DeleteValue implements NestedIterator {
 
     @Override
     public void onLastElementPath(final Field field) {
-        if (!field.name().equals(this.exclude.getLastElement())) {
+        if (!field.name().equals(this.path.getLastElement())) {
             this.updatedValue.put(field.name(), this.oldValue.get(field.name()));
         }
     }
 
     private Collection<Struct> addArrayValues(final Struct updatedValue,
-        final Field field, final Iterable<? extends Struct> arrayValues, final Exclude exclude) {
+        final Field field, final Iterable<? extends Struct> arrayValues, final Path path) {
         final Collection<Struct> values = new ArrayList<>();
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
@@ -89,7 +89,7 @@ public class DeleteValue implements NestedIterator {
             this.oldValue = arrayValue;
             final Struct upperUpdatedValue = this.updatedValue;
             this.updatedValue = updatedNestedStruct;
-            this.iterate(exclude);
+            this.iterate(path);
             this.oldValue = upperOldValue;
             this.updatedValue = upperUpdatedValue;
             values.add(updatedNestedStruct);

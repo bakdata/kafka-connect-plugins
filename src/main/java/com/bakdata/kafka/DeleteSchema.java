@@ -33,7 +33,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 
 @AllArgsConstructor
 public class DeleteSchema implements NestedIterator {
-    private final Exclude exclude;
+    private final Path path;
     private Schema oldSchema;
     @Getter
     private SchemaBuilder updatedSchema;
@@ -57,7 +57,7 @@ public class DeleteSchema implements NestedIterator {
         final SchemaBuilder upperSchemaBuilder = this.updatedSchema;
         this.oldSchema = valueSchema;
         this.updatedSchema = arrayStructSchema;
-        this.iterate(this.exclude);
+        this.iterate(this.path);
         this.oldSchema = upperSchema;
         this.updatedSchema = upperSchemaBuilder;
         this.updatedSchema.field(fieldName, arraySchemaBuilder.build());
@@ -70,7 +70,7 @@ public class DeleteSchema implements NestedIterator {
         this.oldSchema = field.schema();
         final SchemaBuilder upperSchema = this.updatedSchema;
         this.updatedSchema = structSchema;
-        this.iterate(this.exclude);
+        this.iterate(this.path);
         this.updatedSchema = upperSchema;
         this.updatedSchema.field(fieldName, structSchema.schema());
     }
@@ -82,7 +82,7 @@ public class DeleteSchema implements NestedIterator {
 
     @Override
     public void onLastElementPath(final Field field) {
-        if (!field.name().equals(this.exclude.getLastElement())) {
+        if (!field.name().equals(this.path.getLastElement())) {
             this.updatedSchema.field(field.name(), field.schema());
         }
     }

@@ -24,10 +24,9 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Exclude.createListExclude;
+import static com.bakdata.kafka.Path.createPathList;
 
 import java.util.List;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
@@ -42,11 +41,10 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
  */
 @RequiredArgsConstructor
 public final class FieldDropper {
-    private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private static final int CACHE_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private final Iterable<Exclude> excludePaths;
+    private final Iterable<Path> excludePaths;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -55,10 +53,9 @@ public final class FieldDropper {
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        final Iterable<Exclude> excludes = createListExclude(exclude);
+        final Iterable<Path> excludes = createPathList(exclude);
         return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludes);
     }
-
 
     /**
      * This method creates the updated schema and then inserts the values based on the give exclude paths.
@@ -73,34 +70,34 @@ public final class FieldDropper {
 
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = this.makeUpdatedSchema(value.schema(), this.excludePaths);
+            updatedSchema = makeUpdatedSchema(value.schema(), this.excludePaths);
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return this.getUpdatedStruct(value, updatedSchema, this.excludePaths);
+        return getUpdatedStruct(value, updatedSchema, this.excludePaths);
     }
 
-    private Schema makeUpdatedSchema(final Schema schema, final Iterable<Exclude> excludePaths) {
+    private static Schema makeUpdatedSchema(final Schema schema, final Iterable<Path> excludePaths) {
         DeleteSchema deleteSchema = null;
         Schema inSchema = schema;
         SchemaBuilder builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
-        for (final Exclude excludePattern : excludePaths) {
-            deleteSchema = new DeleteSchema(excludePattern, inSchema, builder);
-            deleteSchema.iterate(excludePattern);
+        for (final Path pathPattern : excludePaths) {
+            deleteSchema = new DeleteSchema(pathPattern, inSchema, builder);
+            deleteSchema.iterate(pathPattern);
             inSchema = deleteSchema.getUpdatedSchema().build();
             builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
         }
         return deleteSchema.getUpdatedSchema().build();
     }
 
-    private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
-        final Iterable<Exclude> excludePaths) {
+    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
+        final Iterable<Path> excludePaths) {
         DeleteValue deleteValue = null;
         Struct inValue = value;
         final Struct updatedValue = new Struct(updatedSchema);
-        for (final Exclude exclude : excludePaths) {
-            deleteValue = new DeleteValue(exclude, inValue, updatedValue);
-            deleteValue.iterate(exclude);
+        for (final Path path : excludePaths) {
+            deleteValue = new DeleteValue(path, inValue, updatedValue);
+            deleteValue.iterate(path);
             inValue = deleteValue.getUpdatedValue();
         }
         return deleteValue.getUpdatedValue();

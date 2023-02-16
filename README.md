@@ -48,12 +48,12 @@ Imagine you have the following value:
 }
 ```
 
-This configuration snippet shows how to use `DropField` to exclude the field `dropped_field`.
+This configuration snippet shows how to use `DropField` to path the field `dropped_field`.
 
 ```yaml
 "transforms": "DropField",
 "transforms.DropField.type": "org.apache.kafka.connect.transforms.DropField$Value",
-"transforms.DropField.exclude": "collections.complex_field.dropped_field"
+"transforms.DropField.path": "collections.complex_field.dropped_field"
 ```
 
 The value would transform into this:
@@ -80,9 +80,9 @@ The value would transform into this:
 
 #### Properties
 
-| Name      | Description                                  | Type | Default    | Valid Values                                                                                     | Importance |
-|-----------|----------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
-| `exclude` | Fields to exclude from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
+| Name      | Description                               | Type | Default    | Valid Values                                                                                     | Importance |
+|-----------|-------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
+| `exclued` | Fields to path from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
 
 ## Installation
 
