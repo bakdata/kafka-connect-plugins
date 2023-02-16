@@ -45,9 +45,6 @@ public class DeleteSchema implements NestedIterator {
 
     @Override
     public void onArray(final Field field) {
-        if (this.delete(field)) {
-            return;
-        }
         final Schema valueSchema = field.schema().valueSchema();
         final String fieldName = field.name();
         final SchemaBuilder arrayStructSchema = SchemaBuilder
@@ -60,7 +57,7 @@ public class DeleteSchema implements NestedIterator {
         final SchemaBuilder upperSchemaBuilder = this.updatedSchema;
         this.oldSchema = valueSchema;
         this.updatedSchema = arrayStructSchema;
-        this.iterate();
+        this.iterate(this.exclude);
         this.oldSchema = upperSchema;
         this.updatedSchema = upperSchemaBuilder;
         this.updatedSchema.field(fieldName, arraySchemaBuilder.build());
@@ -68,29 +65,25 @@ public class DeleteSchema implements NestedIterator {
 
     @Override
     public void onStruct(final Field field) {
-        if (this.delete(field)) {
-            return;
-        }
         final String fieldName = field.name();
         final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
         this.oldSchema = field.schema();
         final SchemaBuilder upperSchema = this.updatedSchema;
         this.updatedSchema = structSchema;
-        this.iterate();
+        this.iterate(this.exclude);
         this.updatedSchema = upperSchema;
         this.updatedSchema.field(fieldName, structSchema.schema());
     }
 
-
     @Override
     public void onDefault(final Field field) {
-        if(this.delete(field)) {
-            return;
-        }
         this.updatedSchema.field(field.name(), field.schema());
     }
 
-    private boolean delete(final Field field) {
-        return this.exclude.getLastElements().contains(field.name());
+    @Override
+    public void onLastElementPath(final Field field) {
+        if (!field.name().equals(this.exclude.getLastElement())) {
+            this.updatedSchema.field(field.name(), field.schema());
+        }
     }
 }

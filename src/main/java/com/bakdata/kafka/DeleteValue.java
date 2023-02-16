@@ -40,34 +40,28 @@ public class DeleteValue implements NestedIterator {
 
     @Override
     public Collection<Field> fields() {
-        return this.oldValue.schema().fields();
+        return this.updatedValue.schema().fields();
     }
 
     @Override
     public void onArray(final Field field) {
-        if(delete(field)) {
-            return;
-        }
         final String fieldName = field.name();
         final Iterable<Struct> arrayValues = this.oldValue.getArray(fieldName);
         final Collection<Struct> updatedArrayValues =
-            this.addArrayValues(this.updatedValue, field, arrayValues);
+            this.addArrayValues(this.updatedValue, field, arrayValues, this.exclude);
         this.updatedValue.put(fieldName, updatedArrayValues);
     }
 
     @Override
     public void onStruct(final Field field) {
-        if(delete(field)) {
-            return;
-        }
         final String fieldName = field.name();
-        final Struct struct = this.oldValue.getStruct(fieldName);
+        final Struct structWithValue = this.oldValue.getStruct(fieldName);
         final Struct updatedNestedStruct = new Struct(this.updatedValue.schema().field(fieldName).schema());
         final Struct oldUpperStruct = this.oldValue;
-        this.oldValue = struct;
+        this.oldValue = structWithValue;
         final Struct upperStruct = this.updatedValue;
         this.updatedValue = updatedNestedStruct;
-        this.iterate();
+        this.iterate(this.exclude);
         this.oldValue = oldUpperStruct;
         this.updatedValue = upperStruct;
         this.updatedValue.put(fieldName, updatedNestedStruct);
@@ -75,17 +69,18 @@ public class DeleteValue implements NestedIterator {
 
     @Override
     public void onDefault(final Field field) {
-        if(delete(field)) {
-            return;
-        }
-        this.updatedValue.put(field.name(), this.oldValue.get(field));
+        this.updatedValue.put(field.name(), this.oldValue.get(field.name()));
     }
 
-    private boolean delete(final Field field) {
-        return this.exclude.getLastElements().contains(field.name());
+    @Override
+    public void onLastElementPath(final Field field) {
+        if (!field.name().equals(this.exclude.getLastElement())) {
+            this.updatedValue.put(field.name(), this.oldValue.get(field.name()));
+        }
     }
+
     private Collection<Struct> addArrayValues(final Struct updatedValue,
-        final Field field, final Iterable<? extends Struct> arrayValues) {
+        final Field field, final Iterable<? extends Struct> arrayValues, final Exclude exclude) {
         final Collection<Struct> values = new ArrayList<>();
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
@@ -94,7 +89,7 @@ public class DeleteValue implements NestedIterator {
             this.oldValue = arrayValue;
             final Struct upperUpdatedValue = this.updatedValue;
             this.updatedValue = updatedNestedStruct;
-            this.iterate();
+            this.iterate(exclude);
             this.oldValue = upperOldValue;
             this.updatedValue = upperUpdatedValue;
             values.add(updatedNestedStruct);

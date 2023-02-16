@@ -159,7 +159,67 @@ class FieldDropperTest {
     }
 
 
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *              "dropped_field": "This field should stay here",
+     *              "complex_field": {
+     *                  "dropped_field": "This field will be dropped",
+     *                  "kept_field": 1234
+     *              }
+     *          }
+     *     }
+     * </pre>
+     *
+     * Exclude path: complex_field.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *              "dropped_field": "This field should stay here",
+     *              "complex_field": {
+     *                  "kept_field": 1234
+     *              },
+     *          }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropCorrectFieldIfNamesAreDuplicate() {
+        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
+        final Schema primitiveSchema = SchemaBuilder
+            .struct()
+            .name("PrimitiveObject")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
 
+        final Struct primitiveObject = new Struct(primitiveSchema);
+        primitiveObject.put("dropped_field", "This field will be dropped");
+        primitiveObject.put("kept_field", 1234);
+
+        final Schema complexSchema = SchemaBuilder
+            .struct()
+            .name("complexObject")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("complex_field", primitiveSchema)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("dropped_field", "This field should stay here");
+        complexObject.put("complex_field", primitiveObject);
+
+        final Struct newStruct = computerStruct.updateStruct(complexObject);
+
+        final Field complexField = newStruct.schema().field("complex_field");
+        this.softly.assertThat(complexField).isNotNull();
+        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.schema().field("dropped_field")).isNotNull();
+    }
 
     /**
      * Before:
@@ -223,68 +283,6 @@ class FieldDropperTest {
         this.softly.assertThat(newStruct.get("boolean_field")).isEqualTo(true);
     }
 
-
-    /**
-     * Before:
-     * <pre>
-     *     {@code
-     *          {
-     *              "dropped_field": "This field should stay here",
-     *              "complex_field": {
-     *                  "dropped_field": "This field will be dropped",
-     *                  "kept_field": 1234
-     *              }
-     *          }
-     *     }
-     * </pre>
-     *
-     * Exclude path: complex_field.dropped_field
-     * <p>
-     * After:
-     * <pre>
-     *     {@code
-     *          {
-     *              "dropped_field": "This field should stay here",
-     *              "complex_field": {
-     *                  "kept_field": 1234
-     *              },
-     *          }
-     *     }
-     * </pre>
-     */
-    @Test
-    void shouldDropCorrectFieldIfNamesAreDuplicate() {
-        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
-        final Schema primitiveSchema = SchemaBuilder
-            .struct()
-            .name("PrimitiveObject")
-            .field("dropped_field", Schema.STRING_SCHEMA)
-            .field("kept_field", Schema.INT32_SCHEMA)
-            .build();
-
-        final Struct primitiveObject = new Struct(primitiveSchema);
-        primitiveObject.put("dropped_field", "This field will be dropped");
-        primitiveObject.put("kept_field", 1234);
-
-        final Schema complexSchema = SchemaBuilder
-            .struct()
-            .name("complexObject")
-            .field("dropped_field", Schema.STRING_SCHEMA)
-            .field("complex_field", primitiveSchema)
-            .build();
-
-        final Struct complexObject = new Struct(complexSchema);
-        complexObject.put("dropped_field", "This field should stay here");
-        complexObject.put("complex_field", primitiveObject);
-
-        final Struct newStruct = computerStruct.updateStruct(complexObject);
-
-        final Field complexField = newStruct.schema().field("complex_field");
-        this.softly.assertThat(complexField).isNotNull();
-        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
-        this.softly.assertThat(newStruct.getStruct("complex_field").getInt32("kept_field")).isEqualTo(1234);
-        this.softly.assertThat(newStruct.schema().field("dropped_field")).isNotNull();
-    }
 
     /**
      * Before:

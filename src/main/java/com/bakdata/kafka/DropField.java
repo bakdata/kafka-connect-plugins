@@ -87,7 +87,6 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         return this.newRecord(inputRecord, updatedValue.schema(), updatedValue);
     }
 
-
     /**
      * Implements the method for applying the SMT to the record key.
      */

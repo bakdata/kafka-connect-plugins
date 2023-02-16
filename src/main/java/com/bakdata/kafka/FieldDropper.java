@@ -46,7 +46,7 @@ public final class FieldDropper {
     private static final int CACHE_SIZE = 16;
     private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private final Exclude excludePaths;
+    private final Iterable<Exclude> excludePaths;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -55,7 +55,7 @@ public final class FieldDropper {
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
     public static FieldDropper createFieldDropper(final List<String> exclude) {
-        final Exclude excludes = createListExclude(exclude);
+        final Iterable<Exclude> excludes = createListExclude(exclude);
         return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludes);
     }
 
@@ -73,25 +73,36 @@ public final class FieldDropper {
 
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = makeUpdatedSchema(value.schema(), this.excludePaths);
+            updatedSchema = this.makeUpdatedSchema(value.schema(), this.excludePaths);
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return getUpdatedStruct(value, updatedSchema, this.excludePaths);
+        return this.getUpdatedStruct(value, updatedSchema, this.excludePaths);
     }
 
-    private static Schema makeUpdatedSchema(final Schema schema, final Exclude excludePaths) {
-        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        final DeleteSchema deleteSchema = new DeleteSchema(excludePaths, schema, builder);
-        deleteSchema.iterate();
+    private Schema makeUpdatedSchema(final Schema schema, final Iterable<Exclude> excludePaths) {
+        DeleteSchema deleteSchema = null;
+        Schema inSchema = schema;
+        SchemaBuilder builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
+        for (final Exclude excludePattern : excludePaths) {
+            deleteSchema = new DeleteSchema(excludePattern, inSchema, builder);
+            deleteSchema.iterate(excludePattern);
+            inSchema = deleteSchema.getUpdatedSchema().build();
+            builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
+        }
         return deleteSchema.getUpdatedSchema().build();
     }
 
-    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
-        final Exclude excludePaths) {
+    private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
+        final Iterable<Exclude> excludePaths) {
+        DeleteValue deleteValue = null;
+        Struct inValue = value;
         final Struct updatedValue = new Struct(updatedSchema);
-        final DeleteValue deleteValue = new DeleteValue(excludePaths, value, updatedValue);
-        deleteValue.iterate();
+        for (final Exclude exclude : excludePaths) {
+            deleteValue = new DeleteValue(exclude, inValue, updatedValue);
+            deleteValue.iterate(exclude);
+            inValue = deleteValue.getUpdatedValue();
+        }
         return deleteValue.getUpdatedValue();
     }
 }

@@ -29,9 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,8 +41,9 @@ import lombok.Getter;
 @Getter
 public class Exclude {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
-    private final Collection<String> lastElements;
-    private final Map<String, Integer> excludePathAndSize;
+    private int depth;
+    private final String lastElement;
+
 
     /**
      * A static constructor that delivers a list of exclude objects
@@ -52,14 +51,31 @@ public class Exclude {
      * @param excludes List of exclude paths given by the user
      * @return List of exclude objects
      */
-    public static Exclude createListExclude(final List<String> excludes) {
-        final Collection<String> excludePaths = new ArrayList<>();
-        final Map<String, Integer> pathAndSize = new HashMap<>();
+    public static Iterable<Exclude> createListExclude(final List<String> excludes) {
+        final Collection<Exclude> excludePaths = new ArrayList<>();
         for (final String excludePattern : excludes) {
-            final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(excludePattern)));
-            excludePaths.add(nestedFields.peekLast());
-            pathAndSize.put(excludePattern, nestedFields.size());
+            final Exclude exclude = createExclude(excludePattern);
+            excludePaths.add(exclude);
         }
-        return new Exclude(excludePaths, pathAndSize);
+        return excludePaths;
+    }
+
+    /**
+     * Decreases the depth of the exclude path
+     */
+    public void moveDeeperIntoPath() {
+        this.depth--;
+    }
+
+    /**
+     * Increases the depth of the exclude path
+     */
+    public void moveHigherIntoPath() {
+        this.depth++;
+    }
+
+    private static Exclude createExclude(final CharSequence exclude) {
+        final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
+        return new Exclude(nestedFields.size(), nestedFields.peekLast());
     }
 }

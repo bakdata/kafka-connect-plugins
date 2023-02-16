@@ -27,26 +27,34 @@ package com.bakdata.kafka;
 import java.util.Collection;
 import org.apache.kafka.connect.data.Field;
 
+/**
+ * An interface for iterating through the given (nested) path
+ */
 public interface NestedIterator {
     Collection<Field> fields();
-
     void onArray(final Field field);
-
     void onStruct(final Field field);
-
     void onDefault(final Field field);
+    void onLastElementPath(final Field field);
 
-    default void iterate() {
+    default void iterate(final Exclude exclude) {
+        final int currentPathIndex = exclude.getDepth();
         for (final Field field : this.fields()) {
-            switch (field.schema().type()) {
-                case ARRAY:
-                    this.onArray(field);
-                    break;
-                case STRUCT:
-                    this.onStruct(field);
-                    break;
-                default:
-                    this.onDefault(field);
+            if (currentPathIndex == 1) {
+                this.onLastElementPath(field);
+            } else {
+                exclude.moveDeeperIntoPath();
+                switch (field.schema().type()) {
+                    case ARRAY:
+                        this.onArray(field);
+                        break;
+                    case STRUCT:
+                        this.onStruct(field);
+                        break;
+                    default:
+                        this.onDefault(field);
+                }
+                exclude.moveHigherIntoPath();
             }
         }
     }
