@@ -27,6 +27,7 @@ package com.bakdata.kafka;
 import static com.bakdata.kafka.Path.createPathList;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
@@ -87,7 +88,7 @@ public final class FieldDropper {
             inSchema = deleteSchema.getUpdatedSchema().build();
             builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
         }
-        return deleteSchema.getUpdatedSchema().build();
+        return Objects.requireNonNull(deleteSchema).getUpdatedSchema().build();
     }
 
     private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
@@ -100,6 +101,6 @@ public final class FieldDropper {
             deleteValue.iterate(path);
             inValue = deleteValue.getUpdatedValue();
         }
-        return deleteValue.getUpdatedValue();
+        return Objects.requireNonNull(deleteValue).getUpdatedValue();
     }
 }
