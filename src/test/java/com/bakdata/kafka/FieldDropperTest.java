@@ -159,6 +159,71 @@ class FieldDropperTest {
     }
 
 
+
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *              "complex_field": {
+     *                  "dropped_field": "This field will be dropped."
+     *                  "kept_field": 1234
+     *              },
+     *              "boolean_field": true
+     *          }
+     *     }
+     * </pre>
+     *
+     * Exclude path: complex_field.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *             "complex_field": {
+     *                  "kept_field": 1234
+     *              },
+     *              "boolean_field": true
+     *          }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropNestedFieldInStruct() {
+        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
+        final Schema innerSchema = SchemaBuilder
+            .struct()
+            .name("PrimitiveObject")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct innerStruct = new Struct(innerSchema);
+        innerStruct.put("dropped_field", "This value will be dropped.");
+        innerStruct.put("kept_field", 1234);
+
+        final Schema complexSchema = SchemaBuilder.struct()
+            .name("NestedObject")
+            .field("complex_field", innerSchema)
+            .field("boolean_field", Schema.BOOLEAN_SCHEMA)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("complex_field", innerStruct);
+        complexObject.put("boolean_field", true);
+
+        final Struct newStruct = computerStruct.updateStruct(complexObject);
+
+        final Struct complexField = newStruct.getStruct("complex_field");
+        this.softly.assertThat(complexField.schema().fields()).hasSize(1);
+        this.softly.assertThat(complexField.schema().field("kept_field")).isNotNull();
+        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(complexField.getInt32("kept_field")).isEqualTo(1234);
+        this.softly.assertThat(newStruct.get("boolean_field")).isEqualTo(true);
+    }
+
+
     /**
      * Before:
      * <pre>
@@ -250,70 +315,6 @@ class FieldDropperTest {
      * </pre>
      */
     @Test
-    void shouldDropNestedFieldInStruct() {
-        final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field"));
-        final Schema innerSchema = SchemaBuilder
-            .struct()
-            .name("PrimitiveObject")
-            .field("dropped_field", Schema.STRING_SCHEMA)
-            .field("kept_field", Schema.INT32_SCHEMA)
-            .build();
-
-        final Struct innerStruct = new Struct(innerSchema);
-        innerStruct.put("dropped_field", "This value will be dropped.");
-        innerStruct.put("kept_field", 1234);
-
-        final Schema complexSchema = SchemaBuilder.struct()
-            .name("NestedObject")
-            .field("complex_field", innerSchema)
-            .field("boolean_field", Schema.BOOLEAN_SCHEMA)
-            .build();
-
-        final Struct complexObject = new Struct(complexSchema);
-        complexObject.put("complex_field", innerStruct);
-        complexObject.put("boolean_field", true);
-
-        final Struct newStruct = computerStruct.updateStruct(complexObject);
-
-        final Struct complexField = newStruct.getStruct("complex_field");
-        this.softly.assertThat(complexField.schema().fields()).hasSize(1);
-        this.softly.assertThat(complexField.schema().field("kept_field")).isNotNull();
-        this.softly.assertThat(complexField.schema().field("dropped_field")).isNull();
-        this.softly.assertThat(complexField.getInt32("kept_field")).isEqualTo(1234);
-        this.softly.assertThat(newStruct.get("boolean_field")).isEqualTo(true);
-    }
-
-
-    /**
-     * Before:
-     * <pre>
-     *     {@code
-     *          {
-     *              "complex_field": {
-     *                  "dropped_field": "This field will be dropped."
-     *                  "kept_field": 1234
-     *              },
-     *              "boolean_field": true
-     *          }
-     *     }
-     * </pre>
-     *
-     * Exclude path: complex_field.dropped_field
-     * <p>
-     * After:
-     * <pre>
-     *     {@code
-     *          {
-     *             "complex_field": {
-     *                  "kept_field": 1234
-     *              },
-     *              "boolean_field": true
-     *          }
-     *     }
-     * </pre>
-     */
-    @Test
-    @Disabled("Not working because the of the iteration over the exclude fields when updating the values.")
     void shouldDropMultipleFields() {
         final FieldDropper computerStruct = FieldDropper.createFieldDropper(List.of("complex_field.dropped_field", "boolean_field"));
         final Schema innerSchema = SchemaBuilder

@@ -27,34 +27,26 @@ package com.bakdata.kafka;
 import java.util.Collection;
 import org.apache.kafka.connect.data.Field;
 
-public interface Update {
+public interface NestedIterator {
     Collection<Field> fields();
 
     void onArray(final Field field);
-    void onStruct(final Field field);
-    void onDefault(final Field field);
-    void onNoValues(final Field field);
 
-    default void update(final Exclude exclude) {
-        final int currentPathIndex = exclude.getDepth();
-        final String lastElement = exclude.getLastElement();
+    void onStruct(final Field field);
+
+    void onDefault(final Field field);
+
+    default void iterate() {
         for (final Field field : this.fields()) {
-            final String fieldName = field.name();
-            if (currentPathIndex != 1) {
-                exclude.moveDeeperIntoPath();
-                switch (field.schema().type()) {
-                    case ARRAY:
-                        this.onArray(field);
-                        break;
-                    case STRUCT:
-                        this.onStruct(field);
-                        break;
-                    default:
-                        this.onDefault(field);
-                }
-                exclude.moveHigherIntoPath();
-            } else if (!fieldName.equals(lastElement)) {
-                this.onNoValues(field);
+            switch (field.schema().type()) {
+                case ARRAY:
+                    this.onArray(field);
+                    break;
+                case STRUCT:
+                    this.onStruct(field);
+                    break;
+                default:
+                    this.onDefault(field);
             }
         }
     }

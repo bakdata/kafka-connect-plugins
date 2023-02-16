@@ -32,7 +32,7 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 
 @AllArgsConstructor
-public class DeleteValue implements Update{
+public class DeleteValue implements NestedIterator {
     private final Exclude exclude;
     private Struct oldValue;
     @Getter
@@ -45,15 +45,21 @@ public class DeleteValue implements Update{
 
     @Override
     public void onArray(final Field field) {
+        if(delete(field)) {
+            return;
+        }
         final String fieldName = field.name();
         final Iterable<Struct> arrayValues = this.oldValue.getArray(fieldName);
         final Collection<Struct> updatedArrayValues =
-            this.addArrayValues(this.updatedValue, field, arrayValues, this.exclude);
+            this.addArrayValues(this.updatedValue, field, arrayValues);
         this.updatedValue.put(fieldName, updatedArrayValues);
     }
 
     @Override
     public void onStruct(final Field field) {
+        if(delete(field)) {
+            return;
+        }
         final String fieldName = field.name();
         final Struct struct = this.oldValue.getStruct(fieldName);
         final Struct updatedNestedStruct = new Struct(this.updatedValue.schema().field(fieldName).schema());
@@ -61,7 +67,7 @@ public class DeleteValue implements Update{
         this.oldValue = struct;
         final Struct upperStruct = this.updatedValue;
         this.updatedValue = updatedNestedStruct;
-        this.update(this.exclude);
+        this.iterate();
         this.oldValue = oldUpperStruct;
         this.updatedValue = upperStruct;
         this.updatedValue.put(fieldName, updatedNestedStruct);
@@ -69,16 +75,17 @@ public class DeleteValue implements Update{
 
     @Override
     public void onDefault(final Field field) {
+        if(delete(field)) {
+            return;
+        }
         this.updatedValue.put(field.name(), this.oldValue.get(field));
     }
 
-    @Override
-    public void onNoValues(final Field field) {
-        this.updatedValue.put(field.name(), this.oldValue.get(field));
+    private boolean delete(final Field field) {
+        return this.exclude.getLastElements().contains(field.name());
     }
-
     private Collection<Struct> addArrayValues(final Struct updatedValue,
-        final Field field, final Iterable<? extends Struct> arrayValues, final Exclude exclude) {
+        final Field field, final Iterable<? extends Struct> arrayValues) {
         final Collection<Struct> values = new ArrayList<>();
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
@@ -87,7 +94,7 @@ public class DeleteValue implements Update{
             this.oldValue = arrayValue;
             final Struct upperUpdatedValue = this.updatedValue;
             this.updatedValue = updatedNestedStruct;
-            this.update(exclude);
+            this.iterate();
             this.oldValue = upperOldValue;
             this.updatedValue = upperUpdatedValue;
             values.add(updatedNestedStruct);

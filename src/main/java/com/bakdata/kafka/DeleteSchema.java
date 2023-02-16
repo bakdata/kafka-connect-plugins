@@ -32,7 +32,7 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
 @AllArgsConstructor
-public class DeleteSchema implements Update {
+public class DeleteSchema implements NestedIterator {
     private final Exclude exclude;
     private Schema oldSchema;
     @Getter
@@ -45,6 +45,9 @@ public class DeleteSchema implements Update {
 
     @Override
     public void onArray(final Field field) {
+        if (this.delete(field)) {
+            return;
+        }
         final Schema valueSchema = field.schema().valueSchema();
         final String fieldName = field.name();
         final SchemaBuilder arrayStructSchema = SchemaBuilder
@@ -57,7 +60,7 @@ public class DeleteSchema implements Update {
         final SchemaBuilder upperSchemaBuilder = this.updatedSchema;
         this.oldSchema = valueSchema;
         this.updatedSchema = arrayStructSchema;
-        this.update(this.exclude);
+        this.iterate();
         this.oldSchema = upperSchema;
         this.updatedSchema = upperSchemaBuilder;
         this.updatedSchema.field(fieldName, arraySchemaBuilder.build());
@@ -65,23 +68,29 @@ public class DeleteSchema implements Update {
 
     @Override
     public void onStruct(final Field field) {
+        if (this.delete(field)) {
+            return;
+        }
         final String fieldName = field.name();
         final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
         this.oldSchema = field.schema();
         final SchemaBuilder upperSchema = this.updatedSchema;
         this.updatedSchema = structSchema;
-        this.update(this.exclude);
+        this.iterate();
         this.updatedSchema = upperSchema;
         this.updatedSchema.field(fieldName, structSchema.schema());
     }
 
+
     @Override
     public void onDefault(final Field field) {
+        if(this.delete(field)) {
+            return;
+        }
         this.updatedSchema.field(field.name(), field.schema());
     }
 
-    @Override
-    public void onNoValues(final Field field) {
-        this.updatedSchema.field(field.name(), field.schema());
+    private boolean delete(final Field field) {
+        return this.exclude.getLastElements().contains(field.name());
     }
 }
