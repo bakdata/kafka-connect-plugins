@@ -31,6 +31,9 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
+/**
+ * Contains logic for deleting a schema
+ */
 @AllArgsConstructor
 public class DeleteSchema implements NestedIterator {
     private final Path path;

@@ -31,6 +31,9 @@ import lombok.Getter;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 
+/**
+ * Contains logic for deleting a value
+ */
 @AllArgsConstructor
 public class DeleteValue implements NestedIterator {
     private final Path path;
