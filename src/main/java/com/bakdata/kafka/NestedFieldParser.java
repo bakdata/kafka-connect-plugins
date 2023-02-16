@@ -30,7 +30,7 @@ import org.apache.kafka.connect.data.Field;
 /**
  * An interface for iterating through the given (nested) path
  */
-public interface NestedIterator {
+public interface NestedFieldParser {
     Collection<Field> fields();
     void onArray(final Field field);
     void onStruct(final Field field);

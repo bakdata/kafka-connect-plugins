@@ -35,7 +35,7 @@ import org.apache.kafka.connect.data.Struct;
  * Contains logic for deleting a value
  */
 @AllArgsConstructor
-public class DeleteValue implements NestedIterator {
+public class DeleteValue implements NestedFieldParser {
     private final Path path;
     private Struct oldValue;
     @Getter
