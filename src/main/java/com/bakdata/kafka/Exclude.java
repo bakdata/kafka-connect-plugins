@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -50,7 +51,7 @@ public class Exclude {
      * @param excludes List of exclude paths given by the user
      * @return List of exclude objects
      */
-    public static Iterable<Exclude> createListExclude(final Iterable<String> excludes) {
+    public static Iterable<Exclude> createListExclude(final List<String> excludes) {
         final Collection<Exclude> excludePaths = new ArrayList<>();
         for (final String excludePattern : excludes) {
             final Exclude exclude = createExclude(excludePattern);

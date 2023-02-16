@@ -26,15 +26,12 @@ package com.bakdata.kafka;
 
 import static com.bakdata.kafka.Exclude.createListExclude;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -84,94 +81,26 @@ public final class FieldDropper {
     }
 
     private Schema makeUpdatedSchema(final Schema schema, final Iterable<Exclude> excludePaths) {
-        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
+        DeleteSchema deleteSchema = null;
+        Schema inSchema = schema;
+        SchemaBuilder builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
         for (final Exclude excludePattern : excludePaths) {
-            this.extractSchema(schema, builder, excludePattern);
+            deleteSchema = new DeleteSchema(excludePattern, inSchema, builder);
+            deleteSchema.update(excludePattern);
+            inSchema = deleteSchema.getUpdatedSchema().build();
+            builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
         }
-        return builder.build();
+        return deleteSchema.getUpdatedSchema().build();
     }
 
     private Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
         final Iterable<Exclude> excludePaths) {
+        DeleteValue deleteValue = null;
         final Struct updatedValue = new Struct(updatedSchema);
         for (final Exclude exclude : excludePaths) {
-            this.updateValues(value, updatedValue, exclude);
+            deleteValue = new DeleteValue(exclude, value, updatedValue);
+            deleteValue.update(exclude);
         }
-        return updatedValue;
-    }
-
-    private void extractSchema(final Schema oldSchema, final SchemaBuilder updatedSchema, final Exclude exclude) {
-        final int currentPathIndex = exclude.getDepth();
-        final String lastElement = exclude.getLastElement();
-        for (final Field field : oldSchema.schema().fields()) {
-            final String fieldName = field.name();
-            final Schema fieldSchema = field.schema();
-            if (currentPathIndex != 1) {
-                exclude.moveDeeperIntoPath();
-                switch (fieldSchema.type()) {
-                    case ARRAY:
-                        final Schema valueSchema = fieldSchema.valueSchema();
-                        final SchemaBuilder arrayStructSchema = SchemaBuilder.struct().name(valueSchema.name());
-                        final SchemaBuilder arraySchemaBuilder = SchemaBuilder
-                            .array(arrayStructSchema)
-                            .name(fieldName);
-                        this.extractSchema(valueSchema, arrayStructSchema, exclude);
-                        updatedSchema.field(fieldName, arraySchemaBuilder.build());
-                        break;
-                    case STRUCT:
-                        final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
-                        this.extractSchema(fieldSchema, structSchema, exclude);
-                        updatedSchema.field(fieldName, structSchema.schema());
-                        break;
-                    default:
-                        updatedSchema.field(fieldName, fieldSchema);
-                }
-                exclude.moveHigherIntoPath();
-            } else if (!fieldName.equals(lastElement)) {
-                updatedSchema.field(fieldName, fieldSchema);
-            }
-        }
-    }
-
-    private void updateValues(final Struct oldValue, final Struct updatedValue, final Exclude exclude) {
-        final int currentPathIndex = exclude.getDepth();
-        final String lastElement = exclude.getLastElement();
-        for (final Field field : oldValue.schema().fields()) {
-            final String fieldName = field.name();
-            if (currentPathIndex != 1) {
-                exclude.moveDeeperIntoPath();
-                switch (field.schema().type()) {
-                    case ARRAY:
-                        final Iterable<Struct> arrayValues = oldValue.getArray(fieldName);
-                        final Collection<Struct> updatedArrayValues =
-                            this.addArrayValues(updatedValue, field, arrayValues, exclude);
-                        updatedValue.put(fieldName, updatedArrayValues);
-                        break;
-                    case STRUCT:
-                        final Struct struct = oldValue.getStruct(fieldName);
-                        final Struct updatedNestedStruct = new Struct(updatedValue.schema().field(fieldName).schema());
-                        this.updateValues(struct, updatedNestedStruct, exclude);
-                        updatedValue.put(fieldName, updatedNestedStruct);
-                        break;
-                    default:
-                        updatedValue.put(fieldName, oldValue.get(field));
-                }
-                exclude.moveHigherIntoPath();
-            } else if (!fieldName.equals(lastElement)) {
-                updatedValue.put(fieldName, oldValue.get(field));
-            }
-        }
-    }
-
-    private Collection<Struct> addArrayValues(final Struct updatedValue,
-        final Field field, final Iterable<? extends Struct> arrayValues, final Exclude exclude) {
-        final Collection<Struct> values = new ArrayList<>();
-        for (final Struct arrayValue : arrayValues) {
-            final Struct updatedNestedStruct =
-                new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
-            this.updateValues(arrayValue, updatedNestedStruct, exclude);
-            values.add(updatedNestedStruct);
-        }
-        return values;
+        return deleteValue.getUpdatedValue();
     }
 }
