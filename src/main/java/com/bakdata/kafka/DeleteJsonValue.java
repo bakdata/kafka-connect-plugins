@@ -91,13 +91,9 @@ public class DeleteJsonValue {
 
     public void onStruct(final String fieldName, final ObjectNode structWithValue) {
         final JsonNode updatedNestedStruct = JsonNodeFactory.instance.objectNode();
-        final JsonNode oldUpperStruct = this.oldValue;
-        this.oldValue = structWithValue;
-        final JsonNode upperStruct = this.updatedValue;
-        this.updatedValue = updatedNestedStruct;
+        DeleteJsonValue deleteJsonValue = new DeleteJsonValue(this.path, structWithValue, updatedNestedStruct);
+        deleteJsonValue.iterate(this.path);
         this.iterate(this.path);
-        this.oldValue = oldUpperStruct;
-        this.updatedValue = upperStruct;
         ((ObjectNode) this.updatedValue).set(fieldName, updatedNestedStruct);
     }
 

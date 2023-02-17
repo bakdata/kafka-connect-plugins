@@ -88,7 +88,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
-        if (Schema.OPTIONAL_STRING_SCHEMA.equals(schema)) {
+        if (Schema.OPTIONAL_STRING_SCHEMA.equals(schema) || Schema.STRING_SCHEMA.equals(schema)) { // TODO use set?
             final String value = (String) this.operatingValue(inputRecord);
             final ObjectMapper objectMapper = new ObjectMapper();
             try {

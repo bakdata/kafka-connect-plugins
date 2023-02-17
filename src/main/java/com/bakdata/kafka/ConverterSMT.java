@@ -51,7 +51,7 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
     @Override
     public void configure(final Map<String, ?> configs) {
         final SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
-        Map<String, Object> converterConfigs = new HashMap<>(configs);
+        final Map<String, Object> converterConfigs = new HashMap<>(configs);
         converterConfigs.put(ConverterConfig.TYPE_CONFIG, this.converterType().getName());
         this.converter = config.getConfiguredInstance(CONVERTER_FIELD, Converter.class, converterConfigs);
     }
@@ -61,12 +61,13 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
         if (this.operatingValue(inputRecord) == null) {
             return inputRecord;
         }
-        if (this.operatingSchema(inputRecord).equals(Schema.OPTIONAL_BYTES_SCHEMA)) {
+        final Schema schema = this.operatingSchema(inputRecord);
+        if (Schema.OPTIONAL_BYTES_SCHEMA.equals(schema) || Schema.BYTES_SCHEMA.equals(schema)) { //TODO use set?
             final byte[] value = (byte[]) this.operatingValue(inputRecord);
             final SchemaAndValue schemaAndValue = this.converter.toConnectData(inputRecord.topic(), value);
             return this.newRecord(inputRecord, schemaAndValue.schema(), schemaAndValue.value());
         } else {
-            throw new ConnectException(""); //TODO
+            throw new ConnectException("Unsupported Schema " + schema);
         }
     }
 
