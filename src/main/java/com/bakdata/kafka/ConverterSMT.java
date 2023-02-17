@@ -24,6 +24,7 @@
 
 package com.bakdata.kafka;
 
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -34,6 +35,8 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.storage.Converter;
+import org.apache.kafka.connect.storage.ConverterConfig;
+import org.apache.kafka.connect.storage.ConverterType;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
@@ -48,7 +51,9 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
     @Override
     public void configure(final Map<String, ?> configs) {
         final SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
-        this.converter = config.getConfiguredInstance(CONVERTER_FIELD, Converter.class, (Map<String, Object>) configs);
+        Map<String, Object> converterConfigs = new HashMap<>(configs);
+        converterConfigs.put(ConverterConfig.TYPE_CONFIG, this.converterType().getName());
+        this.converter = config.getConfiguredInstance(CONVERTER_FIELD, Converter.class, converterConfigs);
     }
 
     @Override
@@ -79,6 +84,8 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
 
     protected abstract Object operatingValue(R inputRecord);
 
+    protected abstract ConverterType converterType();
+
     protected abstract R newRecord(R record, Schema updatedSchema, Object updatedValue);
 
     /**
@@ -88,6 +95,10 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
         @Override
         protected Schema operatingSchema(final R inputRecord) {
             return inputRecord.keySchema();
+        }
+        @Override
+        protected ConverterType converterType() {
+            return ConverterType.KEY;
         }
 
         @Override
@@ -114,6 +125,10 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
         @Override
         protected Object operatingValue(final R inputRecord) {
             return inputRecord.value();
+        }
+        @Override
+        protected ConverterType converterType() {
+            return ConverterType.VALUE;
         }
 
         @Override
