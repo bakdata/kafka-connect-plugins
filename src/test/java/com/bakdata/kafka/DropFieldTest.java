@@ -86,7 +86,7 @@ class DropFieldTest {
 
     @Test
     void shouldReturnInputRecordWhenValueIsNull() {
-        final SchemaAndValue schemaAndValue = this.getSinkRecord(false, null);
+        final SchemaAndValue schemaAndValue = this.getSchemaAndValue(false, null);
         final SinkRecord sinkRecord =
             getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8), schemaAndValue.schema(),
                 schemaAndValue.value());
@@ -100,7 +100,7 @@ class DropFieldTest {
 
     @Test
     void shouldReturnInputRecordWhenKeyIsNull() {
-        final SchemaAndValue schemaAndValue = this.getSinkRecord(true, null);
+        final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, null);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
             schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Key<>()) {
@@ -114,7 +114,7 @@ class DropFieldTest {
     @Test
     void shouldThrowExceptionWhenValueDoesNotHaveSchema() {
         final PrimitiveObject keyObject = new PrimitiveObject("test", 1234);
-        final SchemaAndValue schemaAndValue = this.getSinkRecord(true, keyObject);
+        final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, keyObject);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
             schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Value<>()) {
@@ -127,7 +127,7 @@ class DropFieldTest {
     @Test
     void shouldThrowExceptionWhenKeyDoesNotHaveSchema() {
         final PrimitiveObject valueObject = new PrimitiveObject("test", 1234);
-        final SchemaAndValue schemaAndValue = this.getSinkRecord(false, valueObject);
+        final SchemaAndValue schemaAndValue = this.getSchemaAndValue(false, valueObject);
         final SinkRecord sinkRecord =
             getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8), schemaAndValue.schema(),
                 schemaAndValue.value());
@@ -142,7 +142,7 @@ class DropFieldTest {
     @Test
     void shouldDropNestedValueFromKey() {
         final RecordCollection complexKey = createComplexKey();
-        final SchemaAndValue schemaAndValue = this.getSinkRecord(true, complexKey);
+        final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, complexKey);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
             schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Key<>()) {
@@ -188,7 +188,7 @@ class DropFieldTest {
         }
     }
 
-    private <T extends SpecificRecord> SchemaAndValue getSinkRecord(final boolean isKey, final T primitiveObject) {
+    private <T extends SpecificRecord> SchemaAndValue getSchemaAndValue(final boolean isKey, final T primitiveObject) {
         final Map<String, String> schemaRegistryUrlConfig =
             Map.of(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
         try (final Serializer<T> serializer = new SpecificAvroSerializer<>()) {

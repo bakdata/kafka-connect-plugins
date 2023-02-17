@@ -20,12 +20,12 @@ repositories {
 dependencies {
     val kafkaVersion: String by project
     compileOnly(group = "org.apache.kafka", name = "connect-transforms", version = kafkaVersion)
+    compileOnly(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
+    }
 
     val log4jVersion: String by project
     testImplementation(group = "org.apache.logging.log4j", name = "log4j-slf4j-impl", version = log4jVersion)
-    testImplementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-    }
     testImplementation(group = "org.apache.kafka", name = "connect-api", version = kafkaVersion)
     testImplementation(group = "net.mguenther.kafka", name = "kafka-junit", version = "3.3.0") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")

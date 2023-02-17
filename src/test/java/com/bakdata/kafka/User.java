@@ -24,41 +24,13 @@
 
 package com.bakdata.kafka;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-/**
- * An exclude object holding the logic of the exclude path.
- */
+@Data
 @AllArgsConstructor
-@Getter
-public class Path {
-    private static final Pattern DOT_REGEX = Pattern.compile("\\.");
-    private int depth;
-    private final String lastElement;
-
-    /**
-     * Decreases the depth of the exclude path
-     */
-    public void moveDeeperIntoPath() {
-        this.depth--;
-    }
-
-    /**
-     * Increases the depth of the exclude path
-     */
-    public void moveHigherIntoPath() {
-        this.depth++;
-    }
-
-    public static Path createPath(final CharSequence exclude) {
-        final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
-        return new Path(nestedFields.size(), nestedFields.peekLast());
-    }
+public class User {
+    private String firstName;
+    private String lastName;
+    private int age;
 }

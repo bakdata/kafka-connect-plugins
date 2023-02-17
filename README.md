@@ -17,8 +17,8 @@ The following provides usage information for the Kafka Connect `DropField` SMT.
 
 Drop any (nested) field for a given path.
 
-Use the concrete transformation type designed for the record key (`org.apache.kafka.connect.transforms.DropField$Key`)
-or value (`org.apache.kafka.connect.transforms.DropField$Value`).
+Use the concrete transformation type designed for the record key (`com.bakdata.kafka.DropField$Key`)
+or value (`com.bakdata.kafka.DropField$Value`).
 
 #### Examples
 
@@ -52,8 +52,8 @@ This configuration snippet shows how to use `DropField` to path the field `dropp
 
 ```yaml
 "transforms": "DropField",
-"transforms.DropField.type": "org.apache.kafka.connect.transforms.DropField$Value",
-"transforms.DropField.path": "collections.complex_field.dropped_field"
+"transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
+"transforms.DropField.exclude": "collections.complex_field.dropped_field"
 ```
 
 The value would transform into this:

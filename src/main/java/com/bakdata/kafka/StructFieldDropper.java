@@ -24,9 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Path.createPathList;
+import static com.bakdata.kafka.Path.createPath;
 
-import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
@@ -41,11 +40,10 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
  * Contains the logic of excluding the fields in the schema and value.
  */
 @RequiredArgsConstructor
-public final class FieldDropper {
+public final class StructFieldDropper {
     private static final int CACHE_SIZE = 16;
-    private final List<String> exclude;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private final Iterable<Path> excludePaths;
+    private final Path dropPath;
 
     /**
      * Creates a  with a given list of exclude strings.
@@ -53,9 +51,9 @@ public final class FieldDropper {
      * @param exclude a list of strings to be dropped in the value
      * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
      */
-    public static FieldDropper createFieldDropper(final List<String> exclude) {
-        final Iterable<Path> excludes = createPathList(exclude);
-        return new FieldDropper(exclude, new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), excludes);
+    public static StructFieldDropper createStructFieldDropper(final String exclude) {
+        final Path path = createPath(exclude);
+        return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), path);
     }
 
     /**
@@ -65,42 +63,26 @@ public final class FieldDropper {
      * @return Updated value with the excluded field(s)
      */
     public Struct updateStruct(final Struct value) {
-        if (this.exclude.isEmpty()) {
-            return value;
-        }
-
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = makeUpdatedSchema(value.schema(), this.excludePaths);
+            updatedSchema = makeUpdatedSchema(value.schema(), this.dropPath);
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return getUpdatedStruct(value, updatedSchema, this.excludePaths);
+        return getUpdatedStruct(value, updatedSchema, this.dropPath);
     }
 
-    private static Schema makeUpdatedSchema(final Schema schema, final Iterable<Path> excludePaths) {
-        DeleteSchema deleteSchema = null;
-        Schema inSchema = schema;
-        SchemaBuilder builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
-        for (final Path pathPattern : excludePaths) {
-            deleteSchema = new DeleteSchema(pathPattern, inSchema, builder);
-            deleteSchema.iterate(pathPattern);
-            inSchema = deleteSchema.getUpdatedSchema().build();
-            builder = SchemaUtil.copySchemaBasics(inSchema, SchemaBuilder.struct());
-        }
+    private static Schema makeUpdatedSchema(final Schema schema, final Path excludePaths) {
+        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
+        final DeleteSchema deleteSchema = new DeleteSchema(excludePaths, schema, builder);
+        deleteSchema.iterate(excludePaths);
         return Objects.requireNonNull(deleteSchema).getUpdatedSchema().build();
     }
 
-    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema,
-        final Iterable<Path> excludePaths) {
-        DeleteValue deleteValue = null;
-        Struct inValue = value;
+    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema, final Path excludePath) {
         final Struct updatedValue = new Struct(updatedSchema);
-        for (final Path path : excludePaths) {
-            deleteValue = new DeleteValue(path, inValue, updatedValue);
-            deleteValue.iterate(path);
-            inValue = deleteValue.getUpdatedValue();
-        }
-        return Objects.requireNonNull(deleteValue).getUpdatedValue();
+        final DeleteStructValue deleteStructValue = new DeleteStructValue(excludePath, value, updatedValue);
+        deleteStructValue.iterate(excludePath);
+        return Objects.requireNonNull(deleteStructValue).getUpdatedValue();
     }
 }
