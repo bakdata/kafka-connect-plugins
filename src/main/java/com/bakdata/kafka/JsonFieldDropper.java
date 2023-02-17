@@ -26,10 +26,8 @@ package com.bakdata.kafka;
 
 import static com.bakdata.kafka.Path.createPath;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.SynchronizedCache;
@@ -56,15 +54,9 @@ public class JsonFieldDropper {
      * @return Updated value with the excluded field(s)
      */
     public ObjectNode updateJsonNode(final ObjectNode value) {
-        return getUpdatedJson(value, this.excludePath);
-    }
-
-    private ObjectNode getUpdatedJson(ObjectNode value, Path path) {
-        JsonNode inValue = value;
         final ObjectNode updatedValue = JsonNodeFactory.instance.objectNode();
-        final DeleteJsonValue deleteValue = new DeleteJsonValue(path, inValue, updatedValue);
-        deleteValue.iterate(path);
-        inValue = deleteValue.getUpdatedValue();
+        final DeleteJsonValue deleteValue = new DeleteJsonValue(this.excludePath, value, updatedValue);
+        deleteValue.iterate(this.excludePath);
         return (ObjectNode) Objects.requireNonNull(deleteValue).getUpdatedValue();
     }
 }

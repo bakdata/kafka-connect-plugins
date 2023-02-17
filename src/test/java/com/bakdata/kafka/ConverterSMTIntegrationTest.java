@@ -33,10 +33,6 @@ import static net.mguenther.kafka.junit.Wait.delay;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
-import com.bakdata.test.smt.NestedObject;
-import com.bakdata.test.smt.PrimitiveObject;
-import com.bakdata.test.smt.RecordCollection;
-import io.confluent.connect.avro.AvroConverter;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import java.io.IOException;
 import java.nio.file.Files;

@@ -96,6 +96,7 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
         protected Schema operatingSchema(final R inputRecord) {
             return inputRecord.keySchema();
         }
+
         @Override
         protected ConverterType converterType() {
             return ConverterType.KEY;
@@ -126,6 +127,7 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
         protected Object operatingValue(final R inputRecord) {
             return inputRecord.value();
         }
+
         @Override
         protected ConverterType converterType() {
             return ConverterType.VALUE;

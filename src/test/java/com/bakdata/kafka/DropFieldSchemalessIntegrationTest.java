@@ -62,16 +62,9 @@ class DropFieldSchemalessIntegrationTest {
     private static final String TOPIC = "input";
     @RegisterExtension
     final SchemaRegistryMockExtension schemaRegistryMock = new SchemaRegistryMockExtension();
+    private final ObjectMapper mapper = new ObjectMapper();
     private EmbeddedKafkaCluster kafkaCluster;
     private Path outputFile;
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    private String createValue() throws JsonProcessingException {
-        final User user = new User("Jack", "Java", 25);
-        final JsonNode newNode = this.mapper.convertValue(user, JsonNode.class);
-
-        return this.mapper.writeValueAsString(newNode);
-    }
 
     @BeforeEach
     void setUp() throws IOException {
@@ -100,6 +93,13 @@ class DropFieldSchemalessIntegrationTest {
         delay(2, TimeUnit.SECONDS);
         final List<String> output = Files.readAllLines(this.outputFile);
         assertThat(output).containsExactly("{\"firstName\":\"Jack\",\"age\":25}");
+    }
+
+    private String createValue() throws JsonProcessingException {
+        final User user = new User("Jack", "Java", 25);
+        final JsonNode newNode = this.mapper.convertValue(user, JsonNode.class);
+
+        return this.mapper.writeValueAsString(newNode);
     }
 
     private EmbeddedKafkaCluster createCluster() {

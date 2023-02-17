@@ -32,9 +32,13 @@ import org.apache.kafka.connect.data.Field;
  */
 public interface NestedFieldParser {
     Collection<Field> fields();
+
     void onArray(final Field field);
+
     void onStruct(final Field field);
+
     void onDefault(final Field field);
+
     void onLastElementPath(final Field field);
 
     default void iterate(final Path path) {

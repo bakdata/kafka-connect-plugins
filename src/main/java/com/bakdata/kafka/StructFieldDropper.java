@@ -56,6 +56,20 @@ public final class StructFieldDropper {
         return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), path);
     }
 
+    private static Schema makeUpdatedSchema(final Schema schema, final Path excludePaths) {
+        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
+        final DeleteSchema deleteSchema = new DeleteSchema(excludePaths, schema, builder);
+        deleteSchema.iterate(excludePaths);
+        return Objects.requireNonNull(deleteSchema).getUpdatedSchema().build();
+    }
+
+    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema, final Path excludePath) {
+        final Struct updatedValue = new Struct(updatedSchema);
+        final DeleteStructValue deleteStructValue = new DeleteStructValue(excludePath, value, updatedValue);
+        deleteStructValue.iterate(excludePath);
+        return Objects.requireNonNull(deleteStructValue).getUpdatedValue();
+    }
+
     /**
      * This method creates the updated schema and then inserts the values based on the give exclude paths.
      *
@@ -70,19 +84,5 @@ public final class StructFieldDropper {
         }
 
         return getUpdatedStruct(value, updatedSchema, this.dropPath);
-    }
-
-    private static Schema makeUpdatedSchema(final Schema schema, final Path excludePaths) {
-        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        final DeleteSchema deleteSchema = new DeleteSchema(excludePaths, schema, builder);
-        deleteSchema.iterate(excludePaths);
-        return Objects.requireNonNull(deleteSchema).getUpdatedSchema().build();
-    }
-
-    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema, final Path excludePath) {
-        final Struct updatedValue = new Struct(updatedSchema);
-        final DeleteStructValue deleteStructValue = new DeleteStructValue(excludePath, value, updatedValue);
-        deleteStructValue.iterate(excludePath);
-        return Objects.requireNonNull(deleteStructValue).getUpdatedValue();
     }
 }

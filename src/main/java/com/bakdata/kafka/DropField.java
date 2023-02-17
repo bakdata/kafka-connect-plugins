@@ -31,8 +31,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
@@ -90,7 +88,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
-        if(Schema.OPTIONAL_STRING_SCHEMA.equals(schema)) {
+        if (Schema.OPTIONAL_STRING_SCHEMA.equals(schema)) {
             final String value = (String) this.operatingValue(inputRecord);
             final ObjectMapper objectMapper = new ObjectMapper();
             try {

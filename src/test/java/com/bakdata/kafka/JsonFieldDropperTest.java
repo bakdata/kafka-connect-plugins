@@ -28,8 +28,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Collections;
-import java.util.List;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -450,7 +448,7 @@ class JsonFieldDropperTest {
 
         final ArrayNode collections = JsonNodeFactory.instance.arrayNode();
         collections.add(complexObject);
-        collections.add( complexObject2);
+        collections.add(complexObject2);
 
         final ObjectNode recordCollection = JsonNodeFactory.instance.objectNode();
         recordCollection.set("collections", collections);
@@ -481,7 +479,7 @@ class JsonFieldDropperTest {
                                 this.softly.assertThat(struct.get("boolean_field").booleanValue()).isFalse();
                             }
                         );
-                    this.softly.assertThat(array).allSatisfy(arrayNode-> {
+                    this.softly.assertThat(array).allSatisfy(arrayNode -> {
                         final JsonNode field = arrayNode
                             .get("complex_field")
                             .get("dropped_field");

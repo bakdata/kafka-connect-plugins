@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.apache.kafka.connect.data.Struct;
 
 /**
  * Contains logic for deleting a value
@@ -44,6 +43,15 @@ public class DeleteJsonValue {
 
     @Getter
     private JsonNode updatedValue;
+
+    private static JsonNode getJsonNode(JsonNode arrayValue) {
+        switch (arrayValue.getNodeType()) {
+            case OBJECT:
+                return JsonNodeFactory.instance.objectNode();
+            default:
+                throw new RuntimeException(String.format("Unsupported type %s", arrayValue.getNodeType()));
+        }
+    }
 
     public Iterator<Entry<String, JsonNode>> fields() {
         return this.oldValue.fields();
@@ -78,11 +86,10 @@ public class DeleteJsonValue {
     public void onArray(final String fieldName, final ArrayNode arrayNode) {
         final ArrayNode updatedArrayValues =
             this.addArrayValues(this.updatedValue, fieldName, arrayNode, this.path);
-        ((ObjectNode)this.updatedValue).set(fieldName, updatedArrayValues);
+        ((ObjectNode) this.updatedValue).set(fieldName, updatedArrayValues);
     }
 
-    public void onStruct(final String fieldName, final ObjectNode objectNode) {
-        final JsonNode structWithValue = this.oldValue.get(fieldName);
+    public void onStruct(final String fieldName, final ObjectNode structWithValue) {
         final JsonNode updatedNestedStruct = JsonNodeFactory.instance.objectNode();
         final JsonNode oldUpperStruct = this.oldValue;
         this.oldValue = structWithValue;
@@ -91,16 +98,16 @@ public class DeleteJsonValue {
         this.iterate(this.path);
         this.oldValue = oldUpperStruct;
         this.updatedValue = upperStruct;
-        ((ObjectNode)this.updatedValue).set(fieldName, updatedNestedStruct);
+        ((ObjectNode) this.updatedValue).set(fieldName, updatedNestedStruct);
     }
 
     public void onDefault(final String fieldName, JsonNode field) {
-        ((ObjectNode)this.updatedValue).set(fieldName, this.oldValue.get(fieldName));
+        ((ObjectNode) this.updatedValue).set(fieldName, field);
     }
 
     public void onLastElementPath(final String fieldName, final JsonNode field) {
         if (!fieldName.equals(this.path.getLastElement())) {
-            ((ObjectNode)this.updatedValue).set(fieldName, this.oldValue.get(fieldName));
+            ((ObjectNode) this.updatedValue).set(fieldName, field);
         }
     }
 
@@ -119,14 +126,5 @@ public class DeleteJsonValue {
             values.add(updatedNestedStruct);
         }
         return values;
-    }
-
-    private static JsonNode getJsonNode(JsonNode arrayValue) {
-        switch (arrayValue.getNodeType()){
-            case OBJECT:
-                return JsonNodeFactory.instance.objectNode();
-            default:
-                throw new RuntimeException(String.format("Unsupported type %s", arrayValue.getNodeType()));
-        }
     }
 }
