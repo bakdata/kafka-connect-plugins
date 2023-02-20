@@ -48,7 +48,7 @@ class DeleteStructValue implements NestedFieldParser {
         final String fieldName = field.name();
         final Iterable<Struct> arrayValues = this.oldValue.getArray(fieldName);
         final Collection<Struct> updatedArrayValues =
-            this.addArrayValues(this.updatedValue, field, arrayValues, this.path);
+            this.addArrayValues(this.updatedValue, field, arrayValues);
         this.updatedValue.put(fieldName, updatedArrayValues);
     }
 
@@ -76,7 +76,7 @@ class DeleteStructValue implements NestedFieldParser {
     }
 
     private Collection<Struct> addArrayValues(final Struct updatedValue,
-        final Field field, final Iterable<? extends Struct> arrayValues, final Path path) {
+        final Field field, final Iterable<? extends Struct> arrayValues) {
         final Collection<Struct> values = new ArrayList<>();
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
