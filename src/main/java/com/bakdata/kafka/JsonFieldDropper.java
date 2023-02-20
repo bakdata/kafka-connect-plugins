@@ -24,26 +24,64 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Path.createPath;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class JsonFieldDropper {
-    private final Path excludePath;
+    private final List<String> excludePath;
+    private final List<String> currentPath;
 
     static JsonFieldDropper createJsonFieldDropper(final String exclude) {
-        final Path excludePath = createPath(exclude);
-        return new JsonFieldDropper(excludePath);
+        final List<String> excludePath = Path.split(exclude);
+        return new JsonFieldDropper(excludePath, Collections.emptyList());
     }
 
-    ObjectNode updateJsonNode(final ObjectNode value) {
-        final ObjectNode updatedValue = JsonNodeFactory.instance.objectNode();
-        final DeleteJsonValue deleteValue = new DeleteJsonValue(this.excludePath, value, updatedValue);
-        deleteValue.iterate();
-        return (ObjectNode) Objects.requireNonNull(deleteValue).getUpdatedValue();
+    ObjectNode processObject(final ObjectNode value) {
+        final ObjectNode objectCopy = JsonNodeFactory.instance.objectNode();
+        value.fields().forEachRemaining(entry -> {
+            final String fieldName = entry.getKey();
+            final List<String> subPath = this.getSubPath(fieldName);
+            if (!this.isExclude(subPath)) {
+                final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(this.excludePath, subPath);
+                objectCopy.set(fieldName, jsonFieldDropper.transform(entry.getValue()));
+            }
+        });
+        return objectCopy;
+    }
+
+    private JsonNode transform(final JsonNode value) {
+        switch (value.getNodeType()) {
+            case ARRAY:
+                return this.processArray(value);
+            case OBJECT:
+                return this.processObject((ObjectNode) value);
+            default:
+                return value;
+        }
+    }
+
+    private ArrayNode processArray(final Iterable<? extends JsonNode> value) {
+        final ArrayNode arrayCopy = JsonNodeFactory.instance.arrayNode();
+        for (final JsonNode jsonNode : value) {
+            arrayCopy.add(this.transform(jsonNode));
+        }
+        return arrayCopy;
+    }
+
+    private boolean isExclude(final List<String> strings) {
+        return this.excludePath.equals(strings);
+    }
+
+    private List<String> getSubPath(final String fieldName) {
+        final List<String> strings = new ArrayList<>(this.currentPath);
+        strings.add(fieldName);
+        return strings;
     }
 }

@@ -97,7 +97,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
             final ObjectMapper objectMapper = new ObjectMapper();
             try {
                 final JsonNode jsonNode = objectMapper.readTree(value);
-                final ObjectNode dropped = this.jsonFieldDropper.updateJsonNode((ObjectNode) jsonNode);
+                final ObjectNode dropped = this.jsonFieldDropper.processObject((ObjectNode) jsonNode);
                 final String writeValueAsString = objectMapper.writeValueAsString(dropped);
                 return this.newRecord(inputRecord, Schema.OPTIONAL_STRING_SCHEMA, writeValueAsString);
             } catch (final JsonProcessingException e) {
