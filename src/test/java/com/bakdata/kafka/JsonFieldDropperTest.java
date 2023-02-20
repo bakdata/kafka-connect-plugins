@@ -555,7 +555,6 @@ class JsonFieldDropperTest {
      * </pre>
      */
     @Test
-    @Disabled("Test is not passing. The addArrayValues cannot handle array in array.")
     void shouldDropFieldInMultipleNestedArray() {
         final JsonFieldDropper computerStruct =
             JsonFieldDropper.createJsonFieldDropper("collections.deeper_collections.dropped_field");
