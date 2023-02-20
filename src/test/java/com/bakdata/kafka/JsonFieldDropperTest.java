@@ -77,7 +77,7 @@ class JsonFieldDropperTest {
         complexObject.set("boolean_field", JsonNodeFactory.instance.booleanNode(true));
         complexObject.set("complex_field", primitiveObject);
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         this.softly.assertThat(newStruct.get("complex_field").get("kept_field").intValue()).isEqualTo(1234);
         this.softly.assertThat(newStruct.get("boolean_field")).isNull();
@@ -126,7 +126,7 @@ class JsonFieldDropperTest {
         complexObject.set("dropped_field", JsonNodeFactory.instance.textNode("This field should stay here"));
         complexObject.set("complex_field", primitiveObject);
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         final JsonNode complexField = newStruct.get("complex_field");
         this.softly.assertThat(complexField.get("dropped_field")).isNull();
@@ -175,7 +175,7 @@ class JsonFieldDropperTest {
         complexObject.set("complex_field", primitiveObject);
         complexObject.set("boolean_field", JsonNodeFactory.instance.booleanNode(true));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         final JsonNode complexField = newStruct.get("complex_field");
 
@@ -220,7 +220,7 @@ class JsonFieldDropperTest {
         complexObject.set("complex_field", primitiveObject);
         complexObject.set("boolean_field", JsonNodeFactory.instance.booleanNode(true));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         this.softly.assertThat(newStruct.get("complex_field")).isNull();
         this.softly.assertThat(newStruct.get("boolean_field").booleanValue()).isTrue();
@@ -286,7 +286,7 @@ class JsonFieldDropperTest {
         complexObject.set("collections", collections);
         complexObject.set("primitive_field", JsonNodeFactory.instance.numberNode(9876));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         this.softly.assertThat(newStruct.get("collections"))
             .hasSize(2)
@@ -369,7 +369,7 @@ class JsonFieldDropperTest {
         complexObject.set("collections", collections);
         complexObject.set("primitive_field", JsonNodeFactory.instance.numberNode(9876));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         this.softly.assertThat(newStruct.get("collections")).isNull();
         this.softly.assertThat(newStruct.get("primitive_field").intValue()).isEqualTo(9876);
@@ -455,7 +455,7 @@ class JsonFieldDropperTest {
         recordCollection.set("collections", collections);
         recordCollection.set("primitive_field", JsonNodeFactory.instance.numberNode(9876));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(recordCollection);
+        final ObjectNode newStruct = computerStruct.processObject(recordCollection);
 
         this.softly.assertThat(newStruct.get("primitive_field").intValue()).isEqualTo(9876);
         this.softly.assertThat(newStruct.get("collections"))
@@ -578,7 +578,7 @@ class JsonFieldDropperTest {
         complexObject.set("collections", collection);
         complexObject.set("dropped_field", JsonNodeFactory.instance.numberNode(9876));
 
-        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+        final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
         this.softly.assertThat(newStruct.get("collections"))
             .hasSize(2)
