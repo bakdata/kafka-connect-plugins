@@ -31,11 +31,8 @@ import lombok.Getter;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Struct;
 
-/**
- * Contains logic for deleting a value
- */
 @AllArgsConstructor
-public class DeleteStructValue implements NestedFieldParser {
+class DeleteStructValue implements NestedFieldParser {
     private final Path path;
     private Struct oldValue;
     @Getter

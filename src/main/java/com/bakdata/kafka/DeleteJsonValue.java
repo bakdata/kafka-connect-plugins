@@ -32,12 +32,10 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.kafka.connect.errors.ConnectException;
 
-/**
- * Contains logic for deleting a value
- */
 @AllArgsConstructor
-public class DeleteJsonValue {
+class DeleteJsonValue {
     private final Path path;
     private final JsonNode oldValue;
     @Getter
@@ -50,15 +48,15 @@ public class DeleteJsonValue {
             case ARRAY:
                 return JsonNodeFactory.instance.arrayNode();
             default:
-                throw new RuntimeException(String.format("Unsupported type %s", arrayValue.getNodeType()));
+                throw new ConnectException("The input JSON is not a valid JSON.");
         }
     }
 
-    public Iterator<Entry<String, JsonNode>> fields() {
+    private Iterator<Entry<String, JsonNode>> fields() {
         return this.oldValue.fields();
     }
 
-    public void iterate() {
+    void iterate() {
         final int currentPathIndex = this.path.getDepth();
         for (final Iterator<Entry<String, JsonNode>> it = this.fields(); it.hasNext(); ) {
             final Entry<String, JsonNode> field = it.next();

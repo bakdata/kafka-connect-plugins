@@ -27,10 +27,7 @@ package com.bakdata.kafka;
 import java.util.Collection;
 import org.apache.kafka.connect.data.Field;
 
-/**
- * An interface for iterating through the given (nested) path
- */
-public interface NestedFieldParser {
+interface NestedFieldParser {
     Collection<Field> fields();
 
     void onArray(final Field field);

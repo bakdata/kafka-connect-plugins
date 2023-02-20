@@ -36,22 +36,13 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 
-/**
- * Contains the logic of excluding the fields in the schema and value.
- */
 @RequiredArgsConstructor
-public final class StructFieldDropper {
+final class StructFieldDropper {
     private static final int CACHE_SIZE = 16;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
     private final Path dropPath;
 
-    /**
-     * Creates a  with a given list of exclude strings.
-     *
-     * @param exclude a list of strings to be dropped in the value
-     * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
-     */
-    public static StructFieldDropper createStructFieldDropper(final String exclude) {
+    static StructFieldDropper createStructFieldDropper(final String exclude) {
         final Path path = createPath(exclude);
         return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), path);
     }
@@ -70,13 +61,7 @@ public final class StructFieldDropper {
         return Objects.requireNonNull(deleteStructValue).getUpdatedValue();
     }
 
-    /**
-     * This method creates the updated schema and then inserts the values based on the give exclude paths.
-     *
-     * @param value Old value
-     * @return Updated value with the excluded field(s)
-     */
-    public Struct updateStruct(final Struct value) {
+    Struct updateStruct(final Struct value) {
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
             updatedSchema = makeUpdatedSchema(value.schema(), this.dropPath);

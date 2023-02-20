@@ -62,7 +62,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
             return inputRecord;
         }
         final Schema schema = this.operatingSchema(inputRecord);
-        if (Schema.OPTIONAL_BYTES_SCHEMA.equals(schema) || Schema.BYTES_SCHEMA.equals(schema)) { //TODO use set?
+        if (Schema.OPTIONAL_BYTES_SCHEMA.equals(schema) || Schema.BYTES_SCHEMA.equals(schema)) {
             final byte[] value = (byte[]) this.operatingValue(inputRecord);
             final SchemaAndValue schemaAndValue = this.converter.toConnectData(inputRecord.topic(), value);
             return this.newRecord(inputRecord, schemaAndValue.schema(), schemaAndValue.value());
@@ -87,7 +87,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
 
     protected abstract ConverterType converterType();
 
-    protected abstract R newRecord(R record, Schema updatedSchema, Object updatedValue);
+    protected abstract R newRecord(R inputRecord, Schema updatedSchema, Object updatedValue);
 
     /**
      * Implements the method for applying the SMT to the record key.

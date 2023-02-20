@@ -30,30 +30,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.cache.SynchronizedCache;
 
 @RequiredArgsConstructor
-public class JsonFieldDropper {
+class JsonFieldDropper {
     private final Path excludePath;
 
-    /**
-     * Creates a  with a given list of exclude strings.
-     *
-     * @param exclude a list of strings to be dropped in the value
-     * @return an instance of the  class with a {@link SynchronizedCache} of size 16.
-     */
-    public static JsonFieldDropper createJsonFieldDropper(final String exclude) {
+    static JsonFieldDropper createJsonFieldDropper(final String exclude) {
         final Path excludePath = createPath(exclude);
         return new JsonFieldDropper(excludePath);
     }
 
-    /**
-     * This method creates the updated schema and then inserts the values based on the give exclude paths.
-     *
-     * @param value Old value
-     * @return Updated value with the excluded field(s)
-     */
-    public ObjectNode updateJsonNode(final ObjectNode value) {
+    ObjectNode updateJsonNode(final ObjectNode value) {
         final ObjectNode updatedValue = JsonNodeFactory.instance.objectNode();
         final DeleteJsonValue deleteValue = new DeleteJsonValue(this.excludePath, value, updatedValue);
         deleteValue.iterate();

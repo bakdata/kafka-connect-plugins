@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Map;
+import java.util.Set;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
@@ -50,6 +51,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         .define(EXCLUDE_FIELD, Type.STRING, null, Importance.HIGH, FIELD_DOCUMENTATION);
     private StructFieldDropper structFieldDropper;
     private JsonFieldDropper jsonFieldDropper;
+    private Set<Schema> schemaSet;
 
     @Override
     public void configure(final Map<String, ?> configs) {
@@ -57,6 +59,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         final String exclude = config.getString(EXCLUDE_FIELD);
         this.structFieldDropper = createStructFieldDropper(exclude);
         this.jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(exclude);
+        this.schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     }
 
     @Override
@@ -88,7 +91,8 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
-        if (Schema.OPTIONAL_STRING_SCHEMA.equals(schema) || Schema.STRING_SCHEMA.equals(schema)) { // TODO use set?
+
+        if (this.schemaSet.contains(schema)) {
             final String value = (String) this.operatingValue(inputRecord);
             final ObjectMapper objectMapper = new ObjectMapper();
             try {
@@ -97,7 +101,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
                 final String writeValueAsString = objectMapper.writeValueAsString(dropped);
                 return this.newRecord(inputRecord, Schema.OPTIONAL_STRING_SCHEMA, writeValueAsString);
             } catch (final JsonProcessingException e) {
-                throw new RuntimeException(e);
+                throw new ConnectException(String.format("Could not process the input JSON: %s", e));
             }
         }
         final Struct value = requireStruct(this.operatingValue(inputRecord), PURPOSE);

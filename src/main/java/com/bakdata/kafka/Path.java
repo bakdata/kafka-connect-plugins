@@ -31,32 +31,23 @@ import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
- * An exclude object holding the logic of the exclude path.
- */
 @AllArgsConstructor
 @Getter
-public class Path {
+class Path {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private final String lastElement;
     private int depth;
 
-    public static Path createPath(final CharSequence exclude) {
+    static Path createPath(final CharSequence exclude) {
         final Deque<String> nestedFields = new ArrayDeque<>(Arrays.asList(DOT_REGEX.split(exclude)));
         return new Path(nestedFields.peekLast(), nestedFields.size());
     }
 
-    /**
-     * Decreases the depth of the exclude path
-     */
-    public void moveDeeperIntoPath() {
+    void moveDeeperIntoPath() {
         this.depth--;
     }
 
-    /**
-     * Increases the depth of the exclude path
-     */
-    public void moveHigherIntoPath() {
+    void moveHigherIntoPath() {
         this.depth++;
     }
 }
