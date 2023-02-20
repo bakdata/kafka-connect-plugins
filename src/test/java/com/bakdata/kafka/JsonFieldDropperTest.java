@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -488,5 +489,112 @@ class JsonFieldDropperTest {
                 }
             );
         this.softly.assertThat(newStruct.get("primitive_field").intValue()).isEqualTo(9876);
+    }
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *             "collections": [
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "dropped_field": "This field will also be dropped.",
+     *                          "kept_field": 1234
+     *                      }
+     *                   }
+     *                 ]
+     *               },
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "dropped_field": "This field will also be dropped.",
+     *                          "kept_field": 5678
+     *                      }
+     *                   }
+     *                 ]
+     *               }
+     *             ],
+     *             "primitive_field": true
+     *           }
+     *     }
+     * </pre>
+     *
+     * Exclude path: collections.deeper_collections.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *             "collections": [
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "kept_field": 1234
+     *                      }
+     *                   }
+     *                 ]
+     *               },
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "kept_field": 5678
+     *                      }
+     *                   }
+     *                 ]
+     *               }
+     *             ],
+     *             "primitive_field": true
+     *           }
+     *     }
+     * </pre>
+     */
+    @Test
+    @Disabled("Test is not passing. The addArrayValues cannot handle array in array.")
+    void shouldDropFieldInMultipleNestedArray() {
+        final JsonFieldDropper computerStruct =
+            JsonFieldDropper.createJsonFieldDropper("collections.deeper_collections.dropped_field");
+
+        final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
+        primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
+        primitiveObject.set("kept_field", JsonNodeFactory.instance.numberNode(1234));
+
+        final ArrayNode deeperCollections = JsonNodeFactory.instance.arrayNode();
+        deeperCollections.add(primitiveObject);
+
+        final ArrayNode deeperCollections2 = JsonNodeFactory.instance.arrayNode();
+        deeperCollections2.add(primitiveObject);
+
+        final ArrayNode collection = JsonNodeFactory.instance.arrayNode();
+        collection.add(deeperCollections);
+        collection.add(deeperCollections2);
+
+        final ObjectNode complexObject = JsonNodeFactory.instance.objectNode();
+        complexObject.set("collections", collection);
+        complexObject.set("dropped_field", JsonNodeFactory.instance.numberNode(9876));
+
+        final ObjectNode newStruct = computerStruct.updateJsonNode(complexObject);
+
+        this.softly.assertThat(newStruct.get("collections"))
+            .hasSize(2)
+            .isInstanceOfSatisfying(ArrayNode.class,
+                arrayNode -> this.softly.assertThat(arrayNode)
+                    .hasSize(2)
+                    .isInstanceOfSatisfying(ArrayNode.class,
+                        deepArray -> this.softly.assertThat(deepArray).allSatisfy(values -> {
+                                this.softly.assertThat(values.get(0).asText()).isEqualTo("This field will not be "
+                                    + "dropped.");
+                                this.softly.assertThat(values.get(1).asText())
+                                    .isEqualTo("because it is not part of the exclude path");
+                            }
+                        )
+                    )
+            );
+        this.softly.assertThat(newStruct.get("dropped_field")).isNull();
     }
 }

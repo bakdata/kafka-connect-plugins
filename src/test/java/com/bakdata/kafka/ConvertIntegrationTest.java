@@ -55,7 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class ConverterSMTIntegrationTest {
+class ConvertIntegrationTest {
     private static final String CONVERTER = "Converter";
     private static final String TOPIC = "input";
     @RegisterExtension
@@ -114,8 +114,8 @@ class ConverterSMTIntegrationTest {
         // SMT config
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG, CONVERTER);
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + CONVERTER + ".type",
-            ConverterSMT.Value.class.getName());
-        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + CONVERTER + "." + ConverterSMT.CONVERTER_FIELD,
+            Convert.Value.class.getName());
+        properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + CONVERTER + "." + Convert.CONVERTER_FIELD,
             StringConverter.class.getName());
 
         properties.put(SinkConnector.TOPICS_CONFIG, TOPIC);

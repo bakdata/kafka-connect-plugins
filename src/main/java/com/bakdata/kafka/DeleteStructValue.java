@@ -60,13 +60,9 @@ public class DeleteStructValue implements NestedFieldParser {
         final String fieldName = field.name();
         final Struct structWithValue = this.oldValue.getStruct(fieldName);
         final Struct updatedNestedStruct = new Struct(this.updatedValue.schema().field(fieldName).schema());
-        final Struct oldUpperStruct = this.oldValue;
-        this.oldValue = structWithValue;
-        final Struct upperStruct = this.updatedValue;
-        this.updatedValue = updatedNestedStruct;
-        this.iterate(this.path);
-        this.oldValue = oldUpperStruct;
-        this.updatedValue = upperStruct;
+        final NestedFieldParser nestedFieldParser =
+            new DeleteStructValue(this.path, structWithValue, updatedNestedStruct);
+        nestedFieldParser.iterate(this.path);
         this.updatedValue.put(fieldName, updatedNestedStruct);
     }
 
@@ -88,13 +84,9 @@ public class DeleteStructValue implements NestedFieldParser {
         for (final Struct arrayValue : arrayValues) {
             final Struct updatedNestedStruct =
                 new Struct(updatedValue.schema().field(field.name()).schema().valueSchema());
-            final Struct upperOldValue = this.oldValue;
-            this.oldValue = arrayValue;
-            final Struct upperUpdatedValue = this.updatedValue;
-            this.updatedValue = updatedNestedStruct;
-            this.iterate(path);
-            this.oldValue = upperOldValue;
-            this.updatedValue = upperUpdatedValue;
+            final NestedFieldParser nestedFieldParser =
+                new DeleteStructValue(this.path, arrayValue, updatedNestedStruct);
+            nestedFieldParser.iterate(this.path);
             values.add(updatedNestedStruct);
         }
         return values;

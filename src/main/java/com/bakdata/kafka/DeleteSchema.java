@@ -56,13 +56,8 @@ public class DeleteSchema implements NestedFieldParser {
         final SchemaBuilder arraySchemaBuilder = SchemaBuilder
             .array(arrayStructSchema)
             .name(fieldName);
-        final Schema upperSchema = this.oldSchema;
-        final SchemaBuilder upperSchemaBuilder = this.updatedSchema;
-        this.oldSchema = valueSchema;
-        this.updatedSchema = arrayStructSchema;
-        this.iterate(this.path);
-        this.oldSchema = upperSchema;
-        this.updatedSchema = upperSchemaBuilder;
+        final NestedFieldParser deleteSchema = new DeleteSchema(this.path, valueSchema, arrayStructSchema);
+        deleteSchema.iterate(this.path);
         this.updatedSchema.field(fieldName, arraySchemaBuilder.build());
     }
 
@@ -70,11 +65,8 @@ public class DeleteSchema implements NestedFieldParser {
     public void onStruct(final Field field) {
         final String fieldName = field.name();
         final SchemaBuilder structSchema = SchemaBuilder.struct().name(fieldName);
-        this.oldSchema = field.schema();
-        final SchemaBuilder upperSchema = this.updatedSchema;
-        this.updatedSchema = structSchema;
-        this.iterate(this.path);
-        this.updatedSchema = upperSchema;
+        final NestedFieldParser nestedFieldParser = new DeleteSchema(this.path, field.schema(), structSchema);
+        nestedFieldParser.iterate(this.path);
         this.updatedSchema.field(fieldName, structSchema.schema());
     }
 

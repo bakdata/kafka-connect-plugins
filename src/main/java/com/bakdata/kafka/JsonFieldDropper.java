@@ -56,7 +56,7 @@ public class JsonFieldDropper {
     public ObjectNode updateJsonNode(final ObjectNode value) {
         final ObjectNode updatedValue = JsonNodeFactory.instance.objectNode();
         final DeleteJsonValue deleteValue = new DeleteJsonValue(this.excludePath, value, updatedValue);
-        deleteValue.iterate(this.excludePath);
+        deleteValue.iterate();
         return (ObjectNode) Objects.requireNonNull(deleteValue).getUpdatedValue();
     }
 }

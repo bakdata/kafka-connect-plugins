@@ -40,7 +40,7 @@ import org.apache.kafka.connect.storage.ConverterType;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
-public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transformation<R> {
+public abstract class Convert<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String CONVERTER_FIELD = "converter";
     private static final String FIELD_DOCUMENTATION = "Converter to apply to input.";
     private static final ConfigDef CONFIG_DEF =
@@ -92,7 +92,7 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
     /**
      * Implements the method for applying the SMT to the record key.
      */
-    public static class Key<R extends ConnectRecord<R>> extends ConverterSMT<R> {
+    public static class Key<R extends ConnectRecord<R>> extends Convert<R> {
         @Override
         protected Schema operatingSchema(final R inputRecord) {
             return inputRecord.keySchema();
@@ -118,7 +118,7 @@ public abstract class ConverterSMT<R extends ConnectRecord<R>> implements Transf
     /**
      * Implements the method for applying the SMT to the record value.
      */
-    public static class Value<R extends ConnectRecord<R>> extends ConverterSMT<R> {
+    public static class Value<R extends ConnectRecord<R>> extends Convert<R> {
         @Override
         protected Schema operatingSchema(final R inputRecord) {
             return inputRecord.valueSchema();

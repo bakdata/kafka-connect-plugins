@@ -39,15 +39,16 @@ import lombok.Getter;
 @AllArgsConstructor
 public class DeleteJsonValue {
     private final Path path;
-    private JsonNode oldValue;
-
+    private final JsonNode oldValue;
     @Getter
-    private JsonNode updatedValue;
+    private final JsonNode updatedValue;
 
-    private static JsonNode getJsonNode(JsonNode arrayValue) {
+    private static JsonNode getJsonNode(final JsonNode arrayValue) {
         switch (arrayValue.getNodeType()) {
             case OBJECT:
                 return JsonNodeFactory.instance.objectNode();
+            case ARRAY:
+                return JsonNodeFactory.instance.arrayNode();
             default:
                 throw new RuntimeException(String.format("Unsupported type %s", arrayValue.getNodeType()));
         }
@@ -57,14 +58,14 @@ public class DeleteJsonValue {
         return this.oldValue.fields();
     }
 
-    public void iterate(final Path path) {
-        final int currentPathIndex = path.getDepth();
+    public void iterate() {
+        final int currentPathIndex = this.path.getDepth();
         for (final Iterator<Entry<String, JsonNode>> it = this.fields(); it.hasNext(); ) {
             final Entry<String, JsonNode> field = it.next();
             if (currentPathIndex == 1) {
                 this.onLastElementPath(field.getKey(), field.getValue());
             } else {
-                path.moveDeeperIntoPath();
+                this.path.moveDeeperIntoPath();
                 final JsonNode fieldValue = field.getValue();
                 switch (fieldValue.getNodeType()) {
                     case ARRAY:
@@ -78,48 +79,53 @@ public class DeleteJsonValue {
                     default:
                         this.onDefault(field.getKey(), fieldValue);
                 }
-                path.moveHigherIntoPath();
+                this.path.moveHigherIntoPath();
             }
         }
     }
 
-    public void onArray(final String fieldName, final ArrayNode arrayNode) {
-        final ArrayNode updatedArrayValues =
-            this.addArrayValues(this.updatedValue, fieldName, arrayNode, this.path);
+    private void onArray(final String fieldName, final ArrayNode arrayNode) {
+        final ArrayNode updatedArrayValues = this.addArrayValues(arrayNode);
         ((ObjectNode) this.updatedValue).set(fieldName, updatedArrayValues);
     }
 
-    public void onStruct(final String fieldName, final ObjectNode structWithValue) {
+    private void onStruct(final String fieldName, final ObjectNode structWithValue) {
         final JsonNode updatedNestedStruct = JsonNodeFactory.instance.objectNode();
-        DeleteJsonValue deleteJsonValue = new DeleteJsonValue(this.path, structWithValue, updatedNestedStruct);
-        deleteJsonValue.iterate(this.path);
-        this.iterate(this.path);
+        final DeleteJsonValue deleteJsonValue = new DeleteJsonValue(this.path, structWithValue, updatedNestedStruct);
+        deleteJsonValue.iterate();
+        this.iterate();
         ((ObjectNode) this.updatedValue).set(fieldName, updatedNestedStruct);
     }
 
-    public void onDefault(final String fieldName, JsonNode field) {
+    private void onDefault(final String fieldName, final JsonNode field) {
         ((ObjectNode) this.updatedValue).set(fieldName, field);
     }
 
-    public void onLastElementPath(final String fieldName, final JsonNode field) {
+    private void onLastElementPath(final String fieldName, final JsonNode field) {
         if (!fieldName.equals(this.path.getLastElement())) {
             ((ObjectNode) this.updatedValue).set(fieldName, field);
         }
     }
 
-    private ArrayNode addArrayValues(final JsonNode updatedValue,
-        final String fieldName, final Iterable<JsonNode> arrayValues, final Path path) {
+    private ArrayNode addArrayValues(final Iterable<JsonNode> arrayValues) {
         final ArrayNode values = JsonNodeFactory.instance.arrayNode();
         for (final JsonNode arrayValue : arrayValues) {
             final JsonNode updatedNestedStruct = getJsonNode(arrayValue);
-            final JsonNode upperOldValue = this.oldValue;
-            this.oldValue = arrayValue;
-            final JsonNode upperUpdatedValue = this.updatedValue;
-            this.updatedValue = updatedNestedStruct;
-            this.iterate(path);
-            this.oldValue = upperOldValue;
-            this.updatedValue = upperUpdatedValue;
-            values.add(updatedNestedStruct);
+            if (arrayValue.isArray()) {
+                for (final Iterator<JsonNode> it = arrayValue.elements(); it.hasNext(); ) {
+                    this.path.moveDeeperIntoPath();
+                    final JsonNode element = it.next();
+                    final DeleteJsonValue deleteJsonValue =
+                        new DeleteJsonValue(this.path, element, updatedNestedStruct);
+                    deleteJsonValue.iterate();
+                    this.path.moveHigherIntoPath();
+                    values.add(deleteJsonValue.updatedValue);
+                }
+            } else {
+                final DeleteJsonValue deleteJsonValue = new DeleteJsonValue(this.path, arrayValue, updatedNestedStruct);
+                deleteJsonValue.iterate();
+                values.add(deleteJsonValue.updatedValue);
+            }
         }
         return values;
     }
