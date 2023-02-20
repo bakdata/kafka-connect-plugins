@@ -26,6 +26,7 @@ package com.bakdata.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
@@ -43,6 +44,8 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 public abstract class Convert<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String CONVERTER_FIELD = "converter";
     private static final String FIELD_DOCUMENTATION = "Converter to apply to input.";
+
+    private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     private static final ConfigDef CONFIG_DEF =
         new ConfigDef().define(CONVERTER_FIELD, Type.CLASS, ByteArrayConverter.class, Importance.HIGH,
             FIELD_DOCUMENTATION);
@@ -62,7 +65,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
             return inputRecord;
         }
         final Schema schema = this.operatingSchema(inputRecord);
-        if (Schema.OPTIONAL_BYTES_SCHEMA.equals(schema) || Schema.BYTES_SCHEMA.equals(schema)) {
+        if (schemaSet.contains(schema)) {
             final byte[] value = (byte[]) this.operatingValue(inputRecord);
             final SchemaAndValue schemaAndValue = this.converter.toConnectData(inputRecord.topic(), value);
             return this.newRecord(inputRecord, schemaAndValue.schema(), schemaAndValue.value());

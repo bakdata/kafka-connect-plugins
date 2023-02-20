@@ -49,9 +49,9 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(EXCLUDE_FIELD, Type.STRING, null, Importance.HIGH, FIELD_DOCUMENTATION);
+    private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     private StructFieldDropper structFieldDropper;
     private JsonFieldDropper jsonFieldDropper;
-    private Set<Schema> schemaSet;
 
     @Override
     public void configure(final Map<String, ?> configs) {
@@ -59,7 +59,6 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         final String exclude = config.getString(EXCLUDE_FIELD);
         this.structFieldDropper = createStructFieldDropper(exclude);
         this.jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(exclude);
-        this.schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     }
 
     @Override
@@ -92,7 +91,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
 
-        if (this.schemaSet.contains(schema)) {
+        if (schemaSet.contains(schema)) {
             final String value = (String) this.operatingValue(inputRecord);
             final ObjectMapper objectMapper = new ObjectMapper();
             try {
