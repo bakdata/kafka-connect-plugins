@@ -43,12 +43,17 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
+/**
+ * The DropField SMT drops the give field.
+ *
+ * @param <R> Record type
+ */
 public abstract class DropField<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String EXCLUDE_FIELD = "exclude";
     private static final String PURPOSE = "field deletion";
     private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
-        .define(EXCLUDE_FIELD, Type.STRING, null, Importance.HIGH, FIELD_DOCUMENTATION);
+            .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     private StructFieldDropper structFieldDropper;
     private JsonFieldDropper jsonFieldDropper;
@@ -111,8 +116,11 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     /**
      * Implements the method for applying the SMT to the record key.
+     *
+     * @param <R> Record type
      */
     public static class Key<R extends ConnectRecord<R>> extends DropField<R> {
+
         @Override
         protected Schema operatingSchema(final R inputRecord) {
             return inputRecord.keySchema();
@@ -126,12 +134,14 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         @Override
         protected R newRecord(final R inputRecord, final Schema updatedSchema, final Object updatedValue) {
             return inputRecord.newRecord(inputRecord.topic(), inputRecord.kafkaPartition(), updatedSchema, updatedValue,
-                inputRecord.valueSchema(), inputRecord.value(), inputRecord.timestamp());
+                    inputRecord.valueSchema(), inputRecord.value(), inputRecord.timestamp());
         }
     }
 
     /**
      * Implements the method for applying the SMT to the record value.
+     *
+     * @param <R> Record type
      */
     public static class Value<R extends ConnectRecord<R>> extends DropField<R> {
         @Override
@@ -147,8 +157,8 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         @Override
         protected R newRecord(final R inputRecord, final Schema updatedSchema, final Object updatedValue) {
             return inputRecord.newRecord(inputRecord.topic(), inputRecord.kafkaPartition(), inputRecord.keySchema(),
-                inputRecord.key(),
-                updatedSchema, updatedValue, inputRecord.timestamp());
+                    inputRecord.key(),
+                    updatedSchema, updatedValue, inputRecord.timestamp());
         }
     }
 }

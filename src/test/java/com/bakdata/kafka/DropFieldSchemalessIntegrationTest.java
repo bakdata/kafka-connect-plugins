@@ -86,8 +86,8 @@ class DropFieldSchemalessIntegrationTest {
 
         final List<KeyValue<String, Object>> records = singletonList(new KeyValue<>("k1", value));
         this.kafkaCluster.send(to(TOPIC, records)
-            .withAll(this.createProducerProperties())
-            .build());
+                .withAll(this.createProducerProperties())
+                .build());
 
         // makes sure that both records are processed
         delay(2, TimeUnit.SECONDS);
@@ -104,12 +104,12 @@ class DropFieldSchemalessIntegrationTest {
 
     private EmbeddedKafkaCluster createCluster() {
         return EmbeddedKafkaCluster.provisionWith(
-            newClusterConfig()
-                .configure(
-                    kafkaConnect()
-                        .deployConnector(this.config())
-                        .build())
-                .build());
+                newClusterConfig()
+                        .configure(
+                                kafkaConnect()
+                                        .deployConnector(this.config())
+                                        .build())
+                        .build());
     }
 
     private Properties config() {
@@ -119,14 +119,14 @@ class DropFieldSchemalessIntegrationTest {
         properties.put(ConnectorConfig.KEY_CONVERTER_CLASS_CONFIG, StringConverter.class.getName());
         properties.put(ConnectorConfig.VALUE_CONVERTER_CLASS_CONFIG, StringConverter.class.getName());
         properties.put(ConnectorConfig.VALUE_CONVERTER_CLASS_CONFIG + "."
-            + AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
+                + AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
 
         // SMT config
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG, DROP_NESTED_FIELD);
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + ".type",
-            DropField.Value.class.getName());
+                DropField.Value.class.getName());
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + "." + DropField.EXCLUDE_FIELD,
-            EXCLUDE_PATH);
+                EXCLUDE_PATH);
 
         properties.put(SinkConnector.TOPICS_CONFIG, TOPIC);
         properties.put(FileStreamSinkConnector.FILE_CONFIG, this.outputFile.toString());

@@ -24,50 +24,39 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Path.createPath;
+import static com.bakdata.kafka.SchemaDropper.createSchemaDropper;
+import static com.bakdata.kafka.StructDropper.createStructDropper;
 
-import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.transforms.util.SchemaUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 final class StructFieldDropper {
     private static final int CACHE_SIZE = 16;
     private final Cache<? super Schema, Schema> schemaUpdateCache;
-    private final Path dropPath;
+    private final SchemaDropper schemaDropper;
+    private final StructDropper structDropper;
 
     static StructFieldDropper createStructFieldDropper(final String exclude) {
-        final Path path = createPath(exclude);
-        return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), path);
-    }
-
-    private static Schema makeUpdatedSchema(final Schema schema, final Path excludePaths) {
-        final SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
-        final DeleteSchema deleteSchema = new DeleteSchema(excludePaths, schema, builder);
-        deleteSchema.iterate(excludePaths);
-        return Objects.requireNonNull(deleteSchema).getUpdatedSchema().build();
-    }
-
-    private static Struct getUpdatedStruct(final Struct value, final Schema updatedSchema, final Path excludePath) {
-        final Struct updatedValue = new Struct(updatedSchema);
-        final DeleteStructValue deleteStructValue = new DeleteStructValue(excludePath, value, updatedValue);
-        deleteStructValue.iterate(excludePath);
-        return Objects.requireNonNull(deleteStructValue).getUpdatedValue();
+        final SchemaDropper schemaDropper = createSchemaDropper(exclude);
+        final StructDropper structDropper = createStructDropper(exclude);
+        return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), schemaDropper,
+                structDropper);
     }
 
     Struct updateStruct(final Struct value) {
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = makeUpdatedSchema(value.schema(), this.dropPath);
+            updatedSchema = schemaDropper.processSchema(value.schema());
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        return getUpdatedStruct(value, updatedSchema, this.dropPath);
+        Struct processStruct = this.structDropper.processStruct(value, updatedSchema);
+        return processStruct;
     }
 }
