@@ -43,6 +43,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import net.mguenther.kafka.junit.EmbeddedKafkaCluster;
 import net.mguenther.kafka.junit.KeyValue;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -140,5 +142,13 @@ class DropFieldSchemalessIntegrationTest {
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaCluster.getBrokerList());
         properties.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
         return properties;
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class User {
+        private String firstName;
+        private String lastName;
+        private int age;
     }
 }
