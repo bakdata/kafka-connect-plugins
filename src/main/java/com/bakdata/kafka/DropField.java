@@ -85,6 +85,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     @Override
     public void close() {
         this.structFieldDropper = null;
+        this.jsonFieldDropper = null;
     }
 
     protected abstract Schema operatingSchema(R inputRecord);

@@ -50,7 +50,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
     public static final String CONVERTER_FIELD = "converter";
     private static final String FIELD_DOCUMENTATION = "Converter to apply to input.";
 
-    private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_BYTES_SCHEMA, Schema.BYTES_SCHEMA);
+    private static final Set<Schema> BYTES_SCHEMA = Set.of(Schema.OPTIONAL_BYTES_SCHEMA, Schema.BYTES_SCHEMA);
     private static final ConfigDef CONFIG_DEF =
         new ConfigDef().define(CONVERTER_FIELD, Type.CLASS, ByteArrayConverter.class, Importance.HIGH,
             FIELD_DOCUMENTATION);
@@ -70,7 +70,10 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
             return inputRecord;
         }
         final Schema schema = this.operatingSchema(inputRecord);
-        if (schemaSet.contains(schema)) {
+        if(schema == null) {
+            throw new ConnectException("Schema should not be null.");
+        }
+        if (BYTES_SCHEMA.contains(schema)) {
             final byte[] value = (byte[]) this.operatingValue(inputRecord);
             final SchemaAndValue schemaAndValue = this.converter.toConnectData(inputRecord.topic(), value);
             return this.newRecord(inputRecord, schemaAndValue.schema(), schemaAndValue.value());

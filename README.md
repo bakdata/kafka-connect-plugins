@@ -5,13 +5,37 @@
 
 # Kafka Connect plugins
 
-A collection Kafka Connect plugins
+A collection of Kafka Connect plugins.
 
 ## Single Message Transforms (SMTs)
 
-### Kafka Connect drop field(s) SMT
+### Kafka Connect convert SMT
 
-The following provides usage information for the Kafka Connect `DropField` SMT.
+#### Description
+
+Converts a byte record to the given converter class.
+
+Use the concrete transformation type designed for the record key (`com.bakdata.kafka.Convert$Key`)
+or value (`com.bakdata.kafka.Convert$Value`).
+
+#### Example 
+
+This configuration snippet shows how to use `Converter`.
+It converts the value to a string schema.
+
+```yaml
+"transforms": "Convert",
+"transforms.Convert.type": "com.bakdata.kafka.Convert$Value",
+"transforms.Convert.converter": "org.apache.kafka.connect.storage.StringConverter"
+```
+
+#### Properties
+
+| Name        | Description                  | Type  | Default             | Valid Values                                                                                                                                    | Importance |
+|-------------|------------------------------|-------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `converter` | Converter to apply to input. | class | ByteConverter.class | All classes that implement the [Kafka Converter interface](https://kafka.apache.org/24/javadoc/org/apache/kafka/connect/storage/Converter.html) | high       |
+
+### Kafka Connect drop field(s) SMT
 
 #### Description
 
@@ -20,11 +44,13 @@ Drop any (nested) field for a given path.
 Use the concrete transformation type designed for the record key (`com.bakdata.kafka.DropField$Key`)
 or value (`com.bakdata.kafka.DropField$Value`).
 
-#### Examples
 
-These examples show how to configure and use `DropField`.
 
-Imagine you have the following value:
+#### Example
+
+This example shows how to configure and use `DropField`.
+
+Imagine you have the following record value:
 
 ```json
 {
@@ -48,13 +74,24 @@ Imagine you have the following value:
 }
 ```
 
-This configuration snippet shows how to use `DropField` to path the field `dropped_field`.
+This configuration snippet shows how to use `DropField` to exclude the field `dropped_field`.
 
 ```yaml
 "transforms": "DropField",
 "transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
 "transforms.DropField.exclude": "collections.complex_field.dropped_field"
 ```
+**Note:** If your data has bytes array schema, you can first use the `Convert` SMT to convert
+your record to string. Your config would look like this:
+
+```yaml
+"transforms": "Convert,DropField",
+"transforms.Convert.type": "com.bakdata.kafka.Convert$Value",
+"transforms.Convert.converter": "org.apache.kafka.connect.storage.StringConverter"
+"transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
+"transforms.DropField.exclude": "collections.complex_field.dropped_field"
+```
+
 
 The value would transform into this:
 
@@ -80,9 +117,9 @@ The value would transform into this:
 
 #### Properties
 
-| Name      | Description                               | Type | Default    | Valid Values                                                                                     | Importance |
-|-----------|-------------------------------------------|------|------------|--------------------------------------------------------------------------------------------------|------------|
-| `exclued` | Fields to path from the resulting Struct. | list | empty list | Comma separated strings.<br/><br/> The path is separated by "." character. Example: `a.b.c,d.e`. | medium     |
+| Name      | Description                              | Type   | Default | Valid Values                                              | Importance |
+|-----------|------------------------------------------|--------|---------|-----------------------------------------------------------|------------|
+| `exclued` | Field to path from the resulting Struct. | string | -       | The path is separated by "." character. Example: `a.b.c`. | high       |
 
 ## Installation
 
