@@ -42,7 +42,7 @@ class SchemaDropper {
         return new SchemaDropper(excludePath, Collections.emptyList());
     }
 
-    public Schema processSchema(final Schema schema) {
+    Schema processSchema(final Schema schema) {
         final SchemaBuilder schemaCopy = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
         this.addFields(schema, schemaCopy);
         return schemaCopy.build();
