@@ -25,6 +25,7 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.Convert.CONVERTER_FIELD;
+import static com.bakdata.kafka.DropField.EXCLUDE_FIELD;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bakdata.kafka.Convert.Key;
@@ -33,6 +34,7 @@ import com.bakdata.test.smt.PrimitiveObject;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.storage.StringConverter;
@@ -53,6 +55,19 @@ class ConvertTest {
     private static SinkRecord getSinkRecord(final Schema keySchema, final Object keyValue, final Schema valueSchema,
         final Object valueValue) {
         return new SinkRecord(TEST_TOPIC, 0, keySchema, keyValue, valueSchema, valueValue, 0);
+    }
+
+    @Test
+    void shouldReturnInputRecordWhenValueIsNull() {
+        final SinkRecord sinkRecord = getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8),
+            Schema.BYTES_SCHEMA,
+            null);
+        try (final Convert<SinkRecord> convert = new Value<>()) {
+            convert.configure(Map.of(CONVERTER_FIELD, StringConverter.class));
+            final SinkRecord newRecord = convert.apply(sinkRecord);
+            this.softly.assertThat(newRecord.key()).isEqualTo("testKey".getBytes(StandardCharsets.UTF_8));
+            this.softly.assertThat(newRecord.value()).isNull();
+        }
     }
 
     @Test
