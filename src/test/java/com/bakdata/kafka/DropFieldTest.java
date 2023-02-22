@@ -65,21 +65,21 @@ class DropFieldTest {
     private SoftAssertions softly;
 
     private static SinkRecord getSinkRecord(final Schema keySchema, final Object keyValue, final Schema valueSchema,
-            final Object valueValue) {
+        final Object valueValue) {
         return new SinkRecord(TEST_TOPIC, 0, keySchema, keyValue, valueSchema, valueValue, 0);
     }
 
     private static RecordCollection createComplexKey() {
         final PrimitiveObject primitiveObject = PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(1234)
-                .build();
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(1234)
+            .build();
         final NestedObject nestedObject = new NestedObject(primitiveObject, true);
 
         final PrimitiveObject primitiveObject2 = PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(5678)
-                .build();
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(5678)
+            .build();
         final NestedObject nestedObject2 = new NestedObject(primitiveObject2, false);
         return new RecordCollection(List.of(nestedObject, nestedObject2));
     }
@@ -88,8 +88,8 @@ class DropFieldTest {
     void shouldReturnInputRecordWhenValueIsNull() {
         final SchemaAndValue schemaAndValue = this.getSchemaAndValue(false, null);
         final SinkRecord sinkRecord = getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8),
-                schemaAndValue.schema(),
-                schemaAndValue.value());
+            schemaAndValue.schema(),
+            schemaAndValue.value());
         try (final DropField<SinkRecord> dropField = new Value<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             final SinkRecord newRecord = dropField.apply(sinkRecord);
@@ -102,7 +102,7 @@ class DropFieldTest {
     void shouldReturnInputRecordWhenKeyIsNull() {
         final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, null);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
-                schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
+            schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             final SinkRecord newRecord = dropField.apply(sinkRecord);
@@ -116,11 +116,11 @@ class DropFieldTest {
         final PrimitiveObject keyObject = new PrimitiveObject("test", 1234);
         final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, keyObject);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
-                schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
+            schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Value<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             assertThatThrownBy(() -> dropField.apply(sinkRecord)).isInstanceOf(ConnectException.class)
-                    .hasMessage(MESSAGE);
+                .hasMessage(MESSAGE);
         }
     }
 
@@ -129,13 +129,13 @@ class DropFieldTest {
         final PrimitiveObject valueObject = new PrimitiveObject("test", 1234);
         final SchemaAndValue schemaAndValue = this.getSchemaAndValue(false, valueObject);
         final SinkRecord sinkRecord = getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8),
-                schemaAndValue.schema(),
-                schemaAndValue.value());
+            schemaAndValue.schema(),
+            schemaAndValue.value());
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "some.random.field"));
             assertThatThrownBy(() -> dropField.apply(sinkRecord))
-                    .isInstanceOf(ConnectException.class)
-                    .hasMessage(MESSAGE);
+                .isInstanceOf(ConnectException.class)
+                .hasMessage(MESSAGE);
         }
     }
 
@@ -144,49 +144,49 @@ class DropFieldTest {
         final RecordCollection complexKey = createComplexKey();
         final SchemaAndValue schemaAndValue = this.getSchemaAndValue(true, complexKey);
         final SinkRecord sinkRecord = getSinkRecord(schemaAndValue.schema(),
-                schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
+            schemaAndValue.value(), null, "testKey".getBytes(StandardCharsets.UTF_8));
         try (final DropField<SinkRecord> dropField = new Key<>()) {
             dropField.configure(Map.of(EXCLUDE_FIELD, "collections.complex_object.dropped_field"));
             final SinkRecord newRecord = dropField.apply(sinkRecord);
             this.softly.assertThat(newRecord.key())
-                    .isInstanceOfSatisfying(Struct.class,
-                            newKey -> this.softly.assertThat(newKey.getArray("collections"))
-                                    .hasSize(2)
-                                    .satisfies(array -> {
-                                        this.softly.assertThat(array)
-                                                .first()
-                                                .isInstanceOfSatisfying(Struct.class, struct -> {
-                                                    final Integer fieldValue = struct
-                                                            .getStruct("complex_object")
-                                                            .getInt32("kept_field");
-                                                    this.softly.assertThat(fieldValue).isEqualTo(1234);
-                                                    this.softly.assertThat(struct.getBoolean("boolean_field")).isTrue();
-                                                });
-                                        this.softly.assertThat(array.get(1))
-                                                .isInstanceOfSatisfying(Struct.class, struct -> {
-                                                    final Integer fieldValue = struct
-                                                            .getStruct("complex_object")
-                                                            .getInt32("kept_field");
-                                                    this.softly.assertThat(fieldValue).isEqualTo(5678);
+                .isInstanceOfSatisfying(Struct.class,
+                    newKey -> this.softly.assertThat(newKey.getArray("collections"))
+                        .hasSize(2)
+                        .satisfies(array -> {
+                            this.softly.assertThat(array)
+                                .first()
+                                .isInstanceOfSatisfying(Struct.class, struct -> {
+                                    final Integer fieldValue = struct
+                                        .getStruct("complex_object")
+                                        .getInt32("kept_field");
+                                    this.softly.assertThat(fieldValue).isEqualTo(1234);
+                                    this.softly.assertThat(struct.getBoolean("boolean_field")).isTrue();
+                                });
+                            this.softly.assertThat(array.get(1))
+                                .isInstanceOfSatisfying(Struct.class, struct -> {
+                                    final Integer fieldValue = struct
+                                        .getStruct("complex_object")
+                                        .getInt32("kept_field");
+                                    this.softly.assertThat(fieldValue).isEqualTo(5678);
 
-                                                    this.softly.assertThat(struct.getBoolean("boolean_field"))
-                                                            .isFalse();
-                                                });
-                                    }).allSatisfy(array -> this.softly.assertThat(array)
-                                            .isInstanceOfSatisfying(Struct.class, struct -> {
-                                                final Field field = struct
-                                                        .getStruct("complex_object")
-                                                        .schema()
-                                                        .field("dropped_field");
-                                                this.softly.assertThat(field).isNull();
-                                            })));
+                                    this.softly.assertThat(struct.getBoolean("boolean_field"))
+                                        .isFalse();
+                                });
+                        }).allSatisfy(array -> this.softly.assertThat(array)
+                            .isInstanceOfSatisfying(Struct.class, struct -> {
+                                final Field field = struct
+                                    .getStruct("complex_object")
+                                    .schema()
+                                    .field("dropped_field");
+                                this.softly.assertThat(field).isNull();
+                            })));
             this.softly.assertThat(newRecord.value()).isEqualTo("testKey".getBytes(StandardCharsets.UTF_8));
         }
     }
 
     private <T extends SpecificRecord> SchemaAndValue getSchemaAndValue(final boolean isKey, final T primitiveObject) {
         final Map<String, String> schemaRegistryUrlConfig = Map
-                .of(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
+            .of(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
         try (final Serializer<T> serializer = new SpecificAvroSerializer<>()) {
             final Converter avroConverter = new AvroConverter();
             avroConverter.configure(schemaRegistryUrlConfig, isKey);

@@ -45,7 +45,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
     public static final String CONVERTER_FIELD = "converter";
     private static final String FIELD_DOCUMENTATION = "Converter to apply to input.";
 
-    private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
+    private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_BYTES_SCHEMA, Schema.BYTES_SCHEMA);
     private static final ConfigDef CONFIG_DEF =
         new ConfigDef().define(CONVERTER_FIELD, Type.CLASS, ByteArrayConverter.class, Importance.HIGH,
             FIELD_DOCUMENTATION);

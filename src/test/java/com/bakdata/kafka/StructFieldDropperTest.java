@@ -26,6 +26,7 @@ package com.bakdata.kafka;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -631,7 +632,7 @@ class StructFieldDropperTest {
      *     }
      * </pre>
      *
-     * Exclude path: collections.deeper_collections.dropped_field
+     * Exclude path: collections.deeper_collections.complex_field.dropped_field
      * <p>
      * After:
      * <pre>
@@ -886,5 +887,65 @@ class StructFieldDropperTest {
                 }
             );
         this.softly.assertThat(newStruct.schema().field("dropped_field")).isNull();
+    }
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *              "map": "key1": {
+     *                  "dropped_field": "This field will be dropped.",
+     *                  "kept_field": 1234
+     *                }
+     *          }
+     *     }
+     * </pre>
+     *
+     * Exclude path: map.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *              "map": "key1": {
+     *                  "kept_field": 1234
+     *                }
+     *          }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropMap() {
+        final StructFieldDropper computerStruct = StructFieldDropper.createStructFieldDropper("map.dropped_field");
+
+        final Schema primitiveSchema = SchemaBuilder
+            .struct()
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct primitiveStruct = new Struct(primitiveSchema);
+        primitiveStruct.put("dropped_field", "This field will be dropped.");
+        primitiveStruct.put("kept_field", 1234);
+
+        final Schema collectionSchema = SchemaBuilder
+            .map(Schema.STRING_SCHEMA, primitiveSchema)
+            .build();
+
+        final Schema complexSchema = SchemaBuilder
+            .struct()
+            .field("map", collectionSchema)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("map", Map.of("key1", primitiveStruct));
+
+        final Struct newStruct = computerStruct.updateStruct(complexObject);
+
+        final Map<String, Struct> newStructMap = newStruct.getMap("map");
+        final Struct struct = newStructMap.get("key1");
+        this.softly.assertThat(struct.schema().field("dropped_field")).isNull();
+        this.softly.assertThat(struct.get("kept_field")).isEqualTo(1234);
     }
 }

@@ -27,13 +27,12 @@ package com.bakdata.kafka;
 import static com.bakdata.kafka.SchemaDropper.createSchemaDropper;
 import static com.bakdata.kafka.StructDropper.createStructDropper;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 final class StructFieldDropper {
@@ -46,17 +45,16 @@ final class StructFieldDropper {
         final SchemaDropper schemaDropper = createSchemaDropper(exclude);
         final StructDropper structDropper = createStructDropper(exclude);
         return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), schemaDropper,
-                structDropper);
+            structDropper);
     }
 
     Struct updateStruct(final Struct value) {
         Schema updatedSchema = this.schemaUpdateCache.get(value.schema());
         if (updatedSchema == null) {
-            updatedSchema = schemaDropper.processSchema(value.schema());
+            updatedSchema = this.schemaDropper.processSchema(value.schema());
             this.schemaUpdateCache.put(value.schema(), updatedSchema);
         }
 
-        Struct processStruct = this.structDropper.processStruct(value, updatedSchema);
-        return processStruct;
+        return this.structDropper.processStruct(value, updatedSchema);
     }
 }

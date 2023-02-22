@@ -47,14 +47,15 @@ class StructDropper {
     Struct processStruct(final Struct struct, final Schema updatedSchema) {
         final Struct structCopy = new Struct(updatedSchema);
         structCopy.schema().fields().forEach(field -> {
-            final String fieldName = field.name();
-            final List<String> subPath = this.getSubPath(fieldName);
-            if (!this.isExclude(subPath)) {
-                final StructDropper deleteSchema = new StructDropper(this.excludePath, subPath);
-                final Object transform = deleteSchema.transform(struct.get(fieldName), field.schema());
-                structCopy.put(fieldName, transform);
+                final String fieldName = field.name();
+                final List<String> subPath = this.getSubPath(fieldName);
+                if (!this.isExclude(subPath)) {
+                    final StructDropper deleteSchema = new StructDropper(this.excludePath, subPath);
+                    final Object transform = deleteSchema.transform(struct.get(fieldName), field.schema());
+                    structCopy.put(fieldName, transform);
+                }
             }
-        });
+        );
         return structCopy;
     }
 

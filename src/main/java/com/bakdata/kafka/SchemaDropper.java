@@ -73,9 +73,10 @@ class SchemaDropper {
     }
 
     private Schema processMap(final Schema schema) {
-        final Schema updatedSchema = this.transform(schema.valueSchema());
+        final Schema updatedValueSchema = this.transform(schema.valueSchema());
+        final Schema updatedKeySchema = this.transform(schema.keySchema());
         return SchemaBuilder
-            .map(updatedSchema.keySchema(), updatedSchema.valueSchema())
+            .map(updatedKeySchema, updatedValueSchema)
             .name(schema.name())
             .build();
     }

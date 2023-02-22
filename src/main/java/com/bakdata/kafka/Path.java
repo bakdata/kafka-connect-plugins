@@ -24,35 +24,16 @@
 
 package com.bakdata.kafka;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.List;
 import java.util.regex.Pattern;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.experimental.UtilityClass;
 
-@AllArgsConstructor
-@Getter
+@UtilityClass
 class Path {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
-    private final String lastElement;
-    private int depth;
-
-    static Path createPath(final CharSequence exclude) {
-        final Deque<String> nestedFields = new ArrayDeque<>(split(exclude));
-        return new Path(nestedFields.peekLast(), nestedFields.size());
-    }
 
     static List<String> split(final CharSequence exclude) {
         return Arrays.asList(DOT_REGEX.split(exclude));
-    }
-
-    void moveDeeperIntoPath() {
-        this.depth--;
-    }
-
-    void moveHigherIntoPath() {
-        this.depth++;
     }
 }

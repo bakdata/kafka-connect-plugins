@@ -69,15 +69,15 @@ class DropFieldIntegrationTest {
 
     private static RecordCollection createValue() {
         final PrimitiveObject primitiveObject = PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(1234)
-                .build();
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(1234)
+            .build();
         final NestedObject nestedObject = new NestedObject(primitiveObject, true);
 
         final PrimitiveObject primitiveObject2 = PrimitiveObject.newBuilder()
-                .setDroppedField("This field will also be dropped.")
-                .setKeptField(5678)
-                .build();
+            .setDroppedField("This field will also be dropped.")
+            .setKeptField(5678)
+            .build();
         final NestedObject nestedObject2 = new NestedObject(primitiveObject2, false);
         return new RecordCollection(List.of(nestedObject, nestedObject2));
     }
@@ -102,25 +102,25 @@ class DropFieldIntegrationTest {
 
         final List<KeyValue<String, RecordCollection>> records = singletonList(new KeyValue<>("k1", value));
         this.kafkaCluster.send(to(TOPIC, records)
-                .withAll(this.createProducerProperties())
-                .build());
+            .withAll(this.createProducerProperties())
+            .build());
 
         // makes sure that both records are processed
         delay(2, TimeUnit.SECONDS);
         final List<String> output = Files.readAllLines(this.outputFile);
         assertThat(output).containsExactly(
-                "Struct{collections=[Struct{complex_object=Struct{kept_field=1234},boolean_field=true}, "
-                        + "Struct{complex_object=Struct{kept_field=5678},boolean_field=false}]}");
+            "Struct{collections=[Struct{complex_object=Struct{kept_field=1234},boolean_field=true}, "
+                + "Struct{complex_object=Struct{kept_field=5678},boolean_field=false}]}");
     }
 
     private EmbeddedKafkaCluster createCluster() {
         return EmbeddedKafkaCluster.provisionWith(
-                newClusterConfig()
-                        .configure(
-                                kafkaConnect()
-                                        .deployConnector(this.config())
-                                        .build())
-                        .build());
+            newClusterConfig()
+                .configure(
+                    kafkaConnect()
+                        .deployConnector(this.config())
+                        .build())
+                .build());
     }
 
     private Properties config() {
@@ -130,14 +130,14 @@ class DropFieldIntegrationTest {
         properties.put(ConnectorConfig.KEY_CONVERTER_CLASS_CONFIG, StringConverter.class.getName());
         properties.put(ConnectorConfig.VALUE_CONVERTER_CLASS_CONFIG, AvroConverter.class.getName());
         properties.put(ConnectorConfig.VALUE_CONVERTER_CLASS_CONFIG + "."
-                + AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
+            + AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, this.schemaRegistryMock.getUrl());
 
         // SMT config
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG, DROP_NESTED_FIELD);
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + ".type",
-                DropField.Value.class.getName());
+            DropField.Value.class.getName());
         properties.put(ConnectorConfig.TRANSFORMS_CONFIG + "." + DROP_NESTED_FIELD + "." + DropField.EXCLUDE_FIELD,
-                EXCLUDE_PATH);
+            EXCLUDE_PATH);
 
         properties.put(SinkConnector.TOPICS_CONFIG, TOPIC);
         properties.put(FileStreamSinkConnector.FILE_CONFIG, this.outputFile.toString());

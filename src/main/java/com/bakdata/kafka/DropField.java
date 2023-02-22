@@ -53,7 +53,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private static final String PURPOSE = "field deletion";
     private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
-            .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
+        .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> schemaSet = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     private StructFieldDropper structFieldDropper;
     private JsonFieldDropper jsonFieldDropper;
@@ -134,7 +134,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         @Override
         protected R newRecord(final R inputRecord, final Schema updatedSchema, final Object updatedValue) {
             return inputRecord.newRecord(inputRecord.topic(), inputRecord.kafkaPartition(), updatedSchema, updatedValue,
-                    inputRecord.valueSchema(), inputRecord.value(), inputRecord.timestamp());
+                inputRecord.valueSchema(), inputRecord.value(), inputRecord.timestamp());
         }
     }
 
@@ -157,8 +157,8 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         @Override
         protected R newRecord(final R inputRecord, final Schema updatedSchema, final Object updatedValue) {
             return inputRecord.newRecord(inputRecord.topic(), inputRecord.kafkaPartition(), inputRecord.keySchema(),
-                    inputRecord.key(),
-                    updatedSchema, updatedValue, inputRecord.timestamp());
+                inputRecord.key(),
+                updatedSchema, updatedValue, inputRecord.timestamp());
         }
     }
 }
