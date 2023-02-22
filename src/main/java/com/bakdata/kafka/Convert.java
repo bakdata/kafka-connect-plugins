@@ -41,6 +41,11 @@ import org.apache.kafka.connect.storage.ConverterType;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
+/**
+ * Converts a byte array schema into a given class.
+ *
+ * @param <R> Record type
+ */
 public abstract class Convert<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String CONVERTER_FIELD = "converter";
     private static final String FIELD_DOCUMENTATION = "Converter to apply to input.";
@@ -94,6 +99,8 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
 
     /**
      * Implements the method for applying the SMT to the record key.
+     *
+     * @param <R> Record type
      */
     public static class Key<R extends ConnectRecord<R>> extends Convert<R> {
         @Override
@@ -120,6 +127,8 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
 
     /**
      * Implements the method for applying the SMT to the record value.
+     *
+     * @param <R> Record type
      */
     public static class Value<R extends ConnectRecord<R>> extends Convert<R> {
         @Override
