@@ -496,67 +496,49 @@ class JsonFieldDropperTest {
      *     {@code
      *          {
      *             "collections": [
-     *               {
-     *                 "deeper_collections": [
-     *                   {
+     *                 [
      *                      "complex_field": {
-     *                          "dropped_field": "This field will also be dropped.",
-     *                          "kept_field": 1234
-     *                      }
-     *                   }
-     *                 ]
-     *               },
-     *               {
-     *                 "deeper_collections": [
-     *                   {
-     *                      "complex_field": {
-     *                          "dropped_field": "This field will also be dropped.",
-     *                          "kept_field": 5678
-     *                      }
-     *                   }
-     *                 ]
-     *               }
-     *             ],
-     *             "primitive_field": true
+     *                         "dropped_field": "This field will also be dropped.",
+     *                         "kept_field": 1234
+     *                     }
+     *                ],
+     *                [
+     *                    "complex_field": {
+     *                         "dropped_field": "This field will also be dropped.",
+     *                         "kept_field": 5678
+     *                    }
+     *                ]
+     *             ]
      *           }
      *     }
      * </pre>
      *
-     * Exclude path: collections.deeper_collections.dropped_field
+     * Exclude path: collections.complex_field.dropped_field
      * <p>
      * After:
      * <pre>
      *     {@code
      *          {
      *             "collections": [
-     *               {
-     *                 "deeper_collections": [
-     *                   {
-     *                      "complex_field": {
-     *                          "kept_field": 1234
-     *                      }
-     *                   }
+     *                 [
+     *                     "complex_field": {
+     *                         "kept_field": 1234
+     *                     }
+     *                 ],
+     *                 [
+     *                    "complex_field": {
+     *                        "kept_field": 5678
+     *                    }
      *                 ]
-     *               },
-     *               {
-     *                 "deeper_collections": [
-     *                   {
-     *                      "complex_field": {
-     *                          "kept_field": 5678
-     *                      }
-     *                   }
-     *                 ]
-     *               }
-     *             ],
-     *             "primitive_field": true
+     *             ]
      *           }
      *     }
      * </pre>
      */
     @Test
     void shouldDropFieldInMultipleNestedArray() {
-        final JsonFieldDropper computerStruct =
-            JsonFieldDropper.createJsonFieldDropper("collections.deeper_collections.dropped_field");
+        final JsonFieldDropper computerStruct = JsonFieldDropper
+            .createJsonFieldDropper("collections.dropped_field");
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
@@ -574,25 +556,18 @@ class JsonFieldDropperTest {
 
         final ObjectNode complexObject = JsonNodeFactory.instance.objectNode();
         complexObject.set("collections", collection);
-        complexObject.set("dropped_field", JsonNodeFactory.instance.numberNode(9876));
+        complexObject.set("primitive_field", JsonNodeFactory.instance.numberNode(9876));
 
         final ObjectNode newStruct = computerStruct.processObject(complexObject);
 
-        this.softly.assertThat(newStruct.get("collections"))
+        final ArrayNode arrayNode = (ArrayNode) newStruct.get("collections");
+        this.softly.assertThat(arrayNode)
             .hasSize(2)
-            .isInstanceOfSatisfying(ArrayNode.class,
-                arrayNode -> this.softly.assertThat(arrayNode)
-                    .hasSize(2)
-                    .isInstanceOfSatisfying(ArrayNode.class,
-                        deepArray -> this.softly.assertThat(deepArray).allSatisfy(values -> {
-                                this.softly.assertThat(values.get(0).asText()).isEqualTo("This field will not be "
-                                    + "dropped.");
-                                this.softly.assertThat(values.get(1).asText())
-                                    .isEqualTo("because it is not part of the exclude path");
-                            }
-                        )
-                    )
-            );
-        this.softly.assertThat(newStruct.get("dropped_field")).isNull();
+            .allSatisfy(innerArray -> {
+                this.softly.assertThat(innerArray)
+                    .hasSize(1)
+                    .first()
+                    .satisfies(field -> this.softly.assertThat(field.get("dropped_field")).isNull());
+            });
     }
 }

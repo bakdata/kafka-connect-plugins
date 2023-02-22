@@ -782,8 +782,7 @@ class StructFieldDropperTest {
      *                         "kept_field": 5678
      *                    }
      *                ]
-     *             ],
-     *             "primitive_field": true
+     *             ]
      *           }
      *     }
      * </pre>
@@ -805,8 +804,7 @@ class StructFieldDropperTest {
      *                        "kept_field": 5678
      *                    }
      *                 ]
-     *             ],
-     *             "primitive_field": true
+     *             ]
      *           }
      *     }
      * </pre>
@@ -856,12 +854,10 @@ class StructFieldDropperTest {
             .struct()
             .name("RecordCollection")
             .field("collections", collectionsSchema)
-            .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
 
         final Struct recordCollection = new Struct(recordCollectionsSchema);
         recordCollection.put("collections", List.of(deeperCollectionList, deeperCollectionList2));
-        recordCollection.put("primitive_field", 9876);
 
         final Struct newStruct = computerStruct.updateStruct(recordCollection);
 
