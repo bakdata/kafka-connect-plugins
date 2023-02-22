@@ -27,12 +27,10 @@ package com.bakdata.kafka;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class SchemaDropper {
@@ -74,30 +72,20 @@ class SchemaDropper {
         }
     }
 
-    private Schema processMap(final Schema value) {
-        final SchemaBuilder innerStructSchema = SchemaBuilder
-            .struct()
-            .name(value.valueSchema().name());
-
-        final SchemaBuilder mapCopy = SchemaBuilder
-            .map(value.keySchema(), innerStructSchema)
-            .name(value.name());
-
-        this.addFields(value.valueSchema(), innerStructSchema);
-        return mapCopy.build();
+    private Schema processMap(final Schema schema) {
+        final Schema updatedSchema = this.transform(schema.valueSchema());
+        return SchemaBuilder
+            .map(updatedSchema.keySchema(), updatedSchema.valueSchema())
+            .name(schema.name())
+            .build();
     }
 
-    private Schema processArray(final Schema value) {
-        final SchemaBuilder innerStructSchema = SchemaBuilder
-                .struct()
-                .name(value.valueSchema().name());
-
-        final SchemaBuilder arrayCopy = SchemaBuilder
-                .array(innerStructSchema)
-                .name(value.name());
-
-        this.addFields(value.valueSchema(), innerStructSchema);
-        return arrayCopy.build();
+    private Schema processArray(final Schema schema) {
+        final Schema updatedSchema = this.transform(schema.valueSchema());
+        return SchemaBuilder
+            .array(updatedSchema)
+            .name(schema.name())
+            .build();
     }
 
     private boolean isExclude(final List<String> strings) {
