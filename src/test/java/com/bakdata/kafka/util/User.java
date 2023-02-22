@@ -22,26 +22,15 @@
  * SOFTWARE.
  */
 
-package com.bakdata.kafka;
+package com.bakdata.kafka.util;
 
-import java.util.List;
-import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
-import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@ExtendWith(SoftAssertionsExtension.class)
-class PathTest {
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
-    @Test
-    void ShouldSplitPath() {
-        final List<String> split = Path.split("a.b.c");
-        this.softly.assertThat(split).hasSize(3);
-        this.softly.assertThat(split).first().isEqualTo("a");
-        this.softly.assertThat(split.get(1)).isEqualTo("b");
-        this.softly.assertThat(split.get(2)).isEqualTo("c");
-    }
+@Data
+@AllArgsConstructor
+public class User {
+    private String firstName;
+    private String lastName;
+    private int age;
 }

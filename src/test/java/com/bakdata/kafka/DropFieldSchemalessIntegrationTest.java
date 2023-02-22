@@ -32,6 +32,7 @@ import static net.mguenther.kafka.junit.TopicConfig.withName;
 import static net.mguenther.kafka.junit.Wait.delay;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.bakdata.kafka.util.User;
 import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,8 +44,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import net.mguenther.kafka.junit.EmbeddedKafkaCluster;
 import net.mguenther.kafka.junit.KeyValue;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -144,11 +143,4 @@ class DropFieldSchemalessIntegrationTest {
         return properties;
     }
 
-    @Data
-    @AllArgsConstructor
-    private static class User {
-        private String firstName;
-        private String lastName;
-        private int age;
-    }
 }

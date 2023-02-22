@@ -29,10 +29,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bakdata.kafka.DropField.Key;
 import com.bakdata.kafka.DropField.Value;
+import com.bakdata.kafka.util.User;
 import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
 import com.bakdata.test.smt.NestedObject;
 import com.bakdata.test.smt.PrimitiveObject;
 import com.bakdata.test.smt.RecordCollection;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.connect.avro.AvroConverter;
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer;
@@ -59,6 +63,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class DropFieldTest {
     private static final String TEST_TOPIC = "test-topic";
     private static final String MESSAGE = "This SMT can be applied only to records with schema.";
+    private final ObjectMapper mapper = new ObjectMapper();
     @RegisterExtension
     final SchemaRegistryMockExtension schemaRegistryMock = new SchemaRegistryMockExtension();
     @InjectSoftAssertions
@@ -108,6 +113,18 @@ class DropFieldTest {
             final SinkRecord newRecord = dropField.apply(sinkRecord);
             this.softly.assertThat(newRecord.key()).isNull();
             this.softly.assertThat(newRecord.value()).isEqualTo("testKey".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    @Test
+    void shouldDropFieldIfValueIsJsonString() throws JsonProcessingException {
+        final String value = this.createValue();
+        final SinkRecord sinkRecord = getSinkRecord(null, "test", Schema.STRING_SCHEMA, value);
+        try (final DropField<SinkRecord> dropField = new Value<>()) {
+            dropField.configure(Map.of(EXCLUDE_FIELD, "lastName"));
+            final SinkRecord newRecord = dropField.apply(sinkRecord);
+            this.softly.assertThat(newRecord.key()).isEqualTo("test");
+            this.softly.assertThat(newRecord.value()).isEqualTo("{\"firstName\":\"Jack\",\"age\":25}");
         }
     }
 
@@ -194,5 +211,12 @@ class DropFieldTest {
             final byte[] valueBytes = serializer.serialize(TEST_TOPIC, primitiveObject);
             return avroConverter.toConnectData(TEST_TOPIC, valueBytes);
         }
+    }
+
+    private String createValue() throws JsonProcessingException {
+        final User user = new User("Jack", "Java", 25);
+        final JsonNode newNode = this.mapper.convertValue(user, JsonNode.class);
+
+        return this.mapper.writeValueAsString(newNode);
     }
 }

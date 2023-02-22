@@ -70,7 +70,7 @@ public abstract class Convert<R extends ConnectRecord<R>> implements Transformat
             return inputRecord;
         }
         final Schema schema = this.operatingSchema(inputRecord);
-        if(schema == null) {
+        if (schema == null) {
             throw new ConnectException("Schema should not be null.");
         }
         if (BYTES_SCHEMA.contains(schema)) {
