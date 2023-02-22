@@ -540,12 +540,15 @@ class StructFieldDropperTest {
         complexObject2.put("complex_field", primitiveStruct2);
         complexObject2.put("boolean_field", false);
 
+        final Schema collectionsSchema = SchemaBuilder
+            .array(complexSchema)
+            .name("collections")
+            .build();
+
         final Schema recordCollectionsSchema = SchemaBuilder
             .struct()
             .name("RecordCollection")
-            .field("collections",
-                SchemaBuilder.array(complexSchema).name("collections").defaultValue(Collections.emptyList())
-                    .build())
+            .field("collections", collectionsSchema)
             .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
 
@@ -594,5 +597,155 @@ class StructFieldDropperTest {
                 )
             );
         this.softly.assertThat(newStruct.get("primitive_field")).isEqualTo(9876);
+    }
+
+    /**
+     * Before:
+     * <pre>
+     *     {@code
+     *          {
+     *             "collections": [
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "dropped_field": "This field will also be dropped.",
+     *                          "kept_field": 1234
+     *                      }
+     *                   }
+     *                 ]
+     *               },
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "dropped_field": "This field will also be dropped.",
+     *                          "kept_field": 5678
+     *                      }
+     *                   }
+     *                 ]
+     *               }
+     *             ],
+     *             "primitive_field": true
+     *           }
+     *     }
+     * </pre>
+     *
+     * Exclude path: collections.deeper_collections.dropped_field
+     * <p>
+     * After:
+     * <pre>
+     *     {@code
+     *          {
+     *             "collections": [
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "kept_field": 1234
+     *                      }
+     *                   }
+     *                 ]
+     *               },
+     *               {
+     *                 "deeper_collections": [
+     *                   {
+     *                      "complex_field": {
+     *                          "kept_field": 5678
+     *                      }
+     *                   }
+     *                 ]
+     *               }
+     *             ],
+     *             "primitive_field": true
+     *           }
+     *     }
+     * </pre>
+     */
+    @Test
+    void shouldDropFieldInMultipleNestedArray() {
+        final StructFieldDropper computerStruct =
+            StructFieldDropper.createStructFieldDropper("collections.deeper_collections.dropped_field");
+
+        final Schema primitiveSchema = SchemaBuilder
+            .struct()
+            .name("primitiveFields")
+            .field("dropped_field", Schema.STRING_SCHEMA)
+            .field("kept_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct primitiveStruct = new Struct(primitiveSchema);
+        primitiveStruct.put("dropped_field", "This field will be dropped.");
+        primitiveStruct.put("kept_field", 1234);
+
+        final Struct primitiveStruct2 = new Struct(primitiveSchema);
+        primitiveStruct2.put("dropped_field", "This field will also be dropped.");
+        primitiveStruct2.put("kept_field", 5678);
+
+        final Schema complexSchema = SchemaBuilder.struct()
+            .name("nestedObject")
+            .field("complex_field", primitiveSchema)
+            .field("boolean_field", Schema.BOOLEAN_SCHEMA)
+            .build();
+
+        final Struct complexObject = new Struct(complexSchema);
+        complexObject.put("complex_field", primitiveStruct);
+        complexObject.put("boolean_field", true);
+
+        final Struct complexObject2 = new Struct(complexSchema);
+        complexObject2.put("complex_field", primitiveStruct2);
+        complexObject2.put("boolean_field", false);
+
+        final Schema deeperCollectionsSchema = SchemaBuilder
+            .array(complexSchema)
+            .build();
+
+        final Schema deeperCollectionsRecords = SchemaBuilder
+            .struct()
+            .field("deeper_collections", deeperCollectionsSchema)
+            .build();
+
+        final Struct deeperCollection1 = new Struct(deeperCollectionsRecords); // <- inner schema
+        deeperCollection1.put("deeper_collections", List.of(complexObject));
+
+        final Struct deeperCollection2 = new Struct(deeperCollectionsRecords);
+        deeperCollection2.put("deeper_collections", List.of(complexObject2));
+
+        final List<Struct> deeperCollectionList = List.of(deeperCollection1, deeperCollection2);
+
+        final Schema collectionsSchema = SchemaBuilder
+            .array(deeperCollectionsRecords)
+            .build();
+
+        final Schema recordCollectionsSchema = SchemaBuilder
+            .struct()
+            .name("RecordCollection")
+            .field("collections", collectionsSchema)
+            .field("primitive_field", Schema.INT32_SCHEMA)
+            .build();
+
+        final Struct recordCollection = new Struct(recordCollectionsSchema);
+        recordCollection.put("collections", deeperCollectionList);
+        recordCollection.put("primitive_field", 9876);
+
+        final Struct newStruct = computerStruct.updateStruct(recordCollection);
+
+        this.softly.assertThat(newStruct.getArray("collections"))
+            .hasSize(2)
+            .satisfies(
+                arrayNode -> this.softly.assertThat(arrayNode)
+            );
+//                    .hasSize(2)
+//                    .isInstanceOfSatisfying(.class,
+//                        deepArray -> this.softly.assertThat(deepArray).allSatisfy(values -> {
+//                                this.softly.assertThat(values.get(0).asText()).isEqualTo("This field will not be "
+//                                    + "dropped.");
+//                                this.softly.assertThat(values.get(1).asText())
+//                                    .isEqualTo("because it is not part of the exclude path");
+//                            }
+//                        )
+//                    )
+//            );
+        this.softly.assertThat(newStruct.schema().field("dropped_field")).isNull();
     }
 }

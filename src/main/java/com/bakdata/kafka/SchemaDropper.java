@@ -63,6 +63,8 @@ class SchemaDropper {
 
     private Schema transform(final Schema schema) {
         switch (schema.type()) {
+            case MAP:
+                return this.processMap(schema);
             case ARRAY:
                 return this.processArray(schema);
             case STRUCT:
@@ -70,6 +72,19 @@ class SchemaDropper {
             default:
                 return schema;
         }
+    }
+
+    private Schema processMap(final Schema value) {
+        final SchemaBuilder innerStructSchema = SchemaBuilder
+            .struct()
+            .name(value.valueSchema().name());
+
+        final SchemaBuilder mapCopy = SchemaBuilder
+            .map(value.keySchema(), innerStructSchema)
+            .name(value.name());
+
+        this.addFields(value.valueSchema(), innerStructSchema);
+        return mapCopy.build();
     }
 
     private Schema processArray(final Schema value) {
