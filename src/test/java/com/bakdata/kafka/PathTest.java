@@ -39,9 +39,8 @@ class PathTest {
     @Test
     void ShouldSplitPath() {
         final List<String> split = Path.split("a.b.c");
-        this.softly.assertThat(split).hasSize(3);
-        this.softly.assertThat(split).first().isEqualTo("a");
-        this.softly.assertThat(split.get(1)).isEqualTo("b");
-        this.softly.assertThat(split.get(2)).isEqualTo("c");
+        this.softly.assertThat(Path.split("a.b.c"))
+            .hasSize(3)
+            .containsExactly("a", "b", "c");
     }
 }
