@@ -665,7 +665,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropFieldInMultipleNestedArray() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("collections.deeper_collections.dropped_field");
+            StructFieldDropper.createStructFieldDropper("collections.deeper_collections.complex_field.dropped_field");
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -730,22 +730,39 @@ class StructFieldDropperTest {
 
         final Struct newStruct = computerStruct.updateStruct(recordCollection);
 
-        this.softly.assertThat(newStruct.getArray("collections"))
+        final List<Struct> newCollections = newStruct.getArray("collections");
+        this.softly.assertThat(newCollections)
             .hasSize(2)
-            .satisfies(
-                arrayNode -> this.softly.assertThat(arrayNode)
+            .first()
+            .satisfies(collectionValues -> {
+                    final List<Struct> deeperCollections = collectionValues.getArray("deeper_collections");
+                    this.softly.assertThat(deeperCollections)
+                        .hasSize(1)
+                        .first()
+                        .satisfies(deeperCollectionsValues -> {
+                                final Integer keptFieldValue = deeperCollectionsValues
+                                    .getStruct("complex_field")
+                                    .getInt32("kept_field");
+                                this.softly.assertThat(keptFieldValue).isEqualTo(1234);
+                            }
+                        );
+                }
             );
-//                    .hasSize(2)
-//                    .isInstanceOfSatisfying(.class,
-//                        deepArray -> this.softly.assertThat(deepArray).allSatisfy(values -> {
-//                                this.softly.assertThat(values.get(0).asText()).isEqualTo("This field will not be "
-//                                    + "dropped.");
-//                                this.softly.assertThat(values.get(1).asText())
-//                                    .isEqualTo("because it is not part of the exclude path");
-//                            }
-//                        )
-//                    )
-//            );
+        this.softly.assertThat(newCollections.get(1))
+            .satisfies(collectionValues -> {
+                    final List<Struct> deeperCollections = collectionValues.getArray("deeper_collections");
+                    this.softly.assertThat(deeperCollections)
+                        .hasSize(1)
+                        .first()
+                        .satisfies(deeperCollectionsValues -> {
+                                final Integer keptFieldValue = deeperCollectionsValues
+                                    .getStruct("complex_field")
+                                    .getInt32("kept_field");
+                                this.softly.assertThat(keptFieldValue).isEqualTo(5678);
+                            }
+                        );
+                }
+            );
         this.softly.assertThat(newStruct.schema().field("dropped_field")).isNull();
     }
 }
