@@ -24,35 +24,38 @@
 
 package com.bakdata.kafka;
 
+import static com.bakdata.kafka.Path.initializePath;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class JsonFieldDropper {
-    private final List<String> excludePath;
-    private final List<String> currentPath;
+    private final Path path;
 
-    static JsonFieldDropper createJsonFieldDropper(final String exclude) {
-        final List<String> excludePath = Path.split(exclude);
-        return new JsonFieldDropper(excludePath, Collections.emptyList());
+    static JsonFieldDropper createJsonFieldDropper(final List<String> excludePath) {
+        return new JsonFieldDropper(initializePath(excludePath));
     }
 
     ObjectNode processObject(final ObjectNode value) {
         final ObjectNode objectCopy = JsonNodeFactory.instance.objectNode();
-        value.fields().forEachRemaining(entry -> {
-            final String fieldName = entry.getKey();
-            final List<String> subPath = this.getSubPath(fieldName);
-            if (!this.isExclude(subPath)) {
-                final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(this.excludePath, subPath);
-                objectCopy.set(fieldName, jsonFieldDropper.transform(entry.getValue()));
+        value.fields().forEachRemaining(field -> {
+                final String fieldName = field.getKey();
+                final Path subPath = this.path.getSubPath(fieldName);
+                if (subPath.isInclude()) {
+                    JsonNode fieldValue = field.getValue();
+                    if (subPath.isPrefix()) {
+                        final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(subPath);
+                        fieldValue = jsonFieldDropper.transform(fieldValue);
+                    }
+                    objectCopy.set(fieldName, fieldValue);
+                }
             }
-        });
+        );
         return objectCopy;
     }
 
@@ -73,15 +76,5 @@ class JsonFieldDropper {
             arrayCopy.add(this.transform(jsonNode));
         }
         return arrayCopy;
-    }
-
-    private boolean isExclude(final List<String> strings) {
-        return this.excludePath.equals(strings);
-    }
-
-    private List<String> getSubPath(final String fieldName) {
-        final List<String> strings = new ArrayList<>(this.currentPath);
-        strings.add(fieldName);
-        return strings;
     }
 }

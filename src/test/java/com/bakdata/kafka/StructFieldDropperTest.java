@@ -70,7 +70,8 @@ class StructFieldDropperTest {
      */
     @Test
     void shouldDropNotNestedField() {
-        final StructFieldDropper computerStruct = StructFieldDropper.createStructFieldDropper("boolean_field");
+        final StructFieldDropper computerStruct =
+            StructFieldDropper.createStructFieldDropper(Path.split("boolean_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
             .name("PrimitiveObject")
@@ -132,7 +133,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropCorrectFieldIfNamesAreDuplicate() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("complex_field.dropped_field");
+            StructFieldDropper.createStructFieldDropper(Path.split("complex_field.dropped_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
             .name("PrimitiveObject")
@@ -195,7 +196,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropNestedFieldInStruct() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("complex_field.dropped_field");
+            StructFieldDropper.createStructFieldDropper(Path.split("complex_field.dropped_field"));
         final Schema innerSchema = SchemaBuilder
             .struct()
             .name("PrimitiveObject")
@@ -253,7 +254,8 @@ class StructFieldDropperTest {
      */
     @Test
     void shouldDropStruct() {
-        final StructFieldDropper computerStruct = StructFieldDropper.createStructFieldDropper("complex_field");
+        final StructFieldDropper computerStruct =
+            StructFieldDropper.createStructFieldDropper(Path.split("complex_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
             .name("PrimitiveObject")
@@ -322,7 +324,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropFieldInArray() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("collections.dropped_field");
+            StructFieldDropper.createStructFieldDropper(Path.split("collections.dropped_field"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -416,7 +418,8 @@ class StructFieldDropperTest {
      */
     @Test
     void shouldDropArray() {
-        final StructFieldDropper computerStruct = StructFieldDropper.createStructFieldDropper("collections");
+        final StructFieldDropper computerStruct =
+            StructFieldDropper.createStructFieldDropper(Path.split("collections"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -510,7 +513,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropFieldInStructArray() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("collections.complex_field.dropped_field");
+            StructFieldDropper.createStructFieldDropper(Path.split("collections.complex_field.dropped_field"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -666,7 +669,8 @@ class StructFieldDropperTest {
     @Test
     void shouldDropFieldInMultipleNestedStructArray() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("collections.deeper_collections.complex_field.dropped_field");
+            StructFieldDropper.createStructFieldDropper(
+                Path.split("collections.deeper_collections.complex_field.dropped_field"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -812,7 +816,7 @@ class StructFieldDropperTest {
     @Test
     void shouldDropFieldInMultipleNestedArrays() {
         final StructFieldDropper computerStruct =
-            StructFieldDropper.createStructFieldDropper("collections.complex_field.dropped_field");
+            StructFieldDropper.createStructFieldDropper(Path.split("collections.complex_field.dropped_field"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
@@ -913,7 +917,8 @@ class StructFieldDropperTest {
      */
     @Test
     void shouldDropMap() {
-        final StructFieldDropper computerStruct = StructFieldDropper.createStructFieldDropper("map.dropped_field");
+        final StructFieldDropper computerStruct =
+            StructFieldDropper.createStructFieldDropper(Path.split("map.dropped_field"));
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()

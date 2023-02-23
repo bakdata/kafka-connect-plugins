@@ -25,7 +25,6 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.Convert.CONVERTER_FIELD;
-import static com.bakdata.kafka.DropField.EXCLUDE_FIELD;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bakdata.kafka.Convert.Key;
@@ -34,7 +33,6 @@ import com.bakdata.test.smt.PrimitiveObject;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.storage.StringConverter;

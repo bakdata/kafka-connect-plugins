@@ -9,33 +9,36 @@ A collection of Kafka Connect plugins.
 
 ## Single Message Transforms (SMTs)
 
-### Kafka Connect convert SMT
+### Convert
 
 #### Description
 
-Converts a byte record to the given converter class.
+Converts a byte record using the given converter class.
+The [MirrorMaker](https://github.com/apache/kafka/blob/trunk/connect/mirror/README.md)
+connector uses byte array records.
+To process these records, we need to convert them to string first.
 
 Use the concrete transformation type designed for the record key (`com.bakdata.kafka.Convert$Key`)
 or value (`com.bakdata.kafka.Convert$Value`).
 
-#### Example 
+#### Example
 
 This configuration snippet shows how to use `Converter`.
 It converts the value to a string schema.
 
 ```yaml
-"transforms": "Convert",
-"transforms.Convert.type": "com.bakdata.kafka.Convert$Value",
-"transforms.Convert.converter": "org.apache.kafka.connect.storage.StringConverter"
+"transforms": "convert",
+"transforms.convert.type": "com.bakdata.kafka.Convert$Value",
+"transforms.convert.converter": "org.apache.kafka.connect.storage.StringConverter"
 ```
 
 #### Properties
 
-| Name        | Description                  | Type  | Default             | Valid Values                                                                                                                                    | Importance |
-|-------------|------------------------------|-------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `converter` | Converter to apply to input. | class | ByteConverter.class | All classes that implement the [Kafka Converter interface](https://kafka.apache.org/24/javadoc/org/apache/kafka/connect/storage/Converter.html) | high       |
+| Name        | Description                  | Type  | Default                  | Valid Values                                                                                                                                    | Importance |
+|-------------|------------------------------|-------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `converter` | Converter to apply to input. | class | ByteArrayConverter.class | All classes that implement the [Kafka Converter interface](https://kafka.apache.org/34/javadoc/org/apache/kafka/connect/storage/Converter.html) | high       |
 
-### Kafka Connect drop field(s) SMT
+### Drop field
 
 #### Description
 
@@ -43,8 +46,6 @@ Drop any (nested) field for a given path.
 
 Use the concrete transformation type designed for the record key (`com.bakdata.kafka.DropField$Key`)
 or value (`com.bakdata.kafka.DropField$Value`).
-
-
 
 #### Example
 
@@ -81,17 +82,6 @@ This configuration snippet shows how to use `DropField` to exclude the field `dr
 "transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
 "transforms.DropField.exclude": "collections.complex_field.dropped_field"
 ```
-**Note:** If your data has bytes array schema, you can first use the `Convert` SMT to convert
-your record to string. Your config would look like this:
-
-```yaml
-"transforms": "Convert,DropField",
-"transforms.Convert.type": "com.bakdata.kafka.Convert$Value",
-"transforms.Convert.converter": "org.apache.kafka.connect.storage.StringConverter"
-"transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
-"transforms.DropField.exclude": "collections.complex_field.dropped_field"
-```
-
 
 The value would transform into this:
 
@@ -123,7 +113,9 @@ The value would transform into this:
 
 ## Installation
 
-You can install the SMT by adding the JAR file to your Kafka Connect image. For example:
+If you are using Docker to run Kafka Connect,
+you can install the SMT by adding the JAR file to your Kafka Connect image.
+For example:
 
 ```dockerfile
 FROM confluentinc/cp-kafka-connect:latest

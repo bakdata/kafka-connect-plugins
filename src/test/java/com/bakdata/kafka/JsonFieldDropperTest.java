@@ -67,7 +67,7 @@ class JsonFieldDropperTest {
      */
     @Test
     void shouldDropNotNestedField() {
-        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper("boolean_field");
+        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper(Path.split("boolean_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("kept_field", JsonNodeFactory.instance.numberNode(1234));
@@ -115,7 +115,7 @@ class JsonFieldDropperTest {
     @Test
     void shouldDropCorrectFieldIfNamesAreDuplicate() {
         final JsonFieldDropper computerStruct =
-            JsonFieldDropper.createJsonFieldDropper("complex_field.dropped_field");
+            JsonFieldDropper.createJsonFieldDropper(Path.split("complex_field.dropped_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This field will be dropped"));
@@ -164,7 +164,7 @@ class JsonFieldDropperTest {
     @Test
     void shouldDropNestedFieldInStruct() {
         final JsonFieldDropper computerStruct =
-            JsonFieldDropper.createJsonFieldDropper("complex_field.dropped_field");
+            JsonFieldDropper.createJsonFieldDropper(Path.split("complex_field.dropped_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
@@ -210,7 +210,7 @@ class JsonFieldDropperTest {
      */
     @Test
     void shouldDropStruct() {
-        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper("complex_field");
+        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper(Path.split("complex_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This field will be dropped"));
@@ -267,7 +267,7 @@ class JsonFieldDropperTest {
     @Test
     void shouldDropFieldInArray() {
         final JsonFieldDropper computerStruct =
-            JsonFieldDropper.createJsonFieldDropper("collections.dropped_field");
+            JsonFieldDropper.createJsonFieldDropper(Path.split("collections.dropped_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
@@ -350,7 +350,7 @@ class JsonFieldDropperTest {
      */
     @Test
     void shouldDropArray() {
-        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper("collections");
+        final JsonFieldDropper computerStruct = JsonFieldDropper.createJsonFieldDropper(Path.split("collections"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
@@ -428,7 +428,7 @@ class JsonFieldDropperTest {
     @Test
     void shouldDropFieldInStructArray() {
         final JsonFieldDropper computerStruct = JsonFieldDropper
-            .createJsonFieldDropper("collections.complex_field.dropped_field");
+            .createJsonFieldDropper(Path.split("collections.complex_field.dropped_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));
@@ -538,7 +538,7 @@ class JsonFieldDropperTest {
     @Test
     void shouldDropFieldInMultipleNestedArray() {
         final JsonFieldDropper computerStruct = JsonFieldDropper
-            .createJsonFieldDropper("collections.dropped_field");
+            .createJsonFieldDropper(Path.split("collections.dropped_field"));
 
         final ObjectNode primitiveObject = JsonNodeFactory.instance.objectNode();
         primitiveObject.set("dropped_field", JsonNodeFactory.instance.textNode("This value will be dropped."));

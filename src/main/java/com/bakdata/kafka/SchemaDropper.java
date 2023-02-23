@@ -24,7 +24,8 @@
 
 package com.bakdata.kafka;
 
-import java.util.ArrayList;
+import static com.bakdata.kafka.Path.createPath;
+
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +35,10 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 
 @RequiredArgsConstructor
 class SchemaDropper {
-    private final List<String> excludePath;
-    private final List<String> currentPath;
+    private final Path path;
 
-    static SchemaDropper createSchemaDropper(final String exclude) {
-        final List<String> excludePath = Path.split(exclude);
-        return new SchemaDropper(excludePath, Collections.emptyList());
+    static SchemaDropper createSchemaDropper(final List<String> excludePath) {
+        return new SchemaDropper(createPath(excludePath, Collections.emptyList()));
     }
 
     Schema processSchema(final Schema schema) {
@@ -51,10 +50,14 @@ class SchemaDropper {
     private void addFields(final Schema schema, final SchemaBuilder schemaCopy) {
         schema.fields().forEach(field -> {
             final String fieldName = field.name();
-            final List<String> subPath = this.getSubPath(fieldName);
-            if (!this.isExclude(subPath)) {
-                final SchemaDropper deleteSchema = new SchemaDropper(this.excludePath, subPath);
-                schemaCopy.field(fieldName, deleteSchema.transform(field.schema()));
+            final Path subPath = this.path.getSubPath(fieldName);
+            if (subPath.isInclude()) {
+                Schema fieldSchema = field.schema();
+                if (subPath.isPrefix()) {
+                    final SchemaDropper deleteSchema = new SchemaDropper(subPath);
+                    fieldSchema = deleteSchema.transform(field.schema());
+                }
+                schemaCopy.field(fieldName, fieldSchema);
             }
         });
     }
@@ -87,15 +90,5 @@ class SchemaDropper {
             .array(updatedSchema)
             .name(schema.name())
             .build();
-    }
-
-    private boolean isExclude(final List<String> strings) {
-        return this.excludePath.equals(strings);
-    }
-
-    private List<String> getSubPath(final String fieldName) {
-        final List<String> strings = new ArrayList<>(this.currentPath);
-        strings.add(fieldName);
-        return strings;
     }
 }

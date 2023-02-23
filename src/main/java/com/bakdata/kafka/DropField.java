@@ -31,6 +31,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.kafka.common.config.ConfigDef;
@@ -44,7 +45,7 @@ import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
 /**
- * The DropField SMT drops the give field.
+ * Drop any (nested) field for a given path.
  *
  * @param <R> Record type
  */
@@ -55,6 +56,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> STRING_SCHEMA = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
+    private List<String> excludePath;
     private StructFieldDropper structFieldDropper;
     private JsonFieldDropper jsonFieldDropper;
 
@@ -62,8 +64,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     public void configure(final Map<String, ?> configs) {
         final SimpleConfig config = new SimpleConfig(CONFIG_DEF, configs);
         final String exclude = config.getString(EXCLUDE_FIELD);
-        this.structFieldDropper = createStructFieldDropper(exclude);
-        this.jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(exclude);
+        this.excludePath = Path.split(exclude);
     }
 
     @Override
@@ -73,7 +74,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         } else if (this.operatingSchema(inputRecord) != null) {
             return this.applyWithSchema(inputRecord);
         } else {
-            throw new ConnectException("This SMT can be applied only to records with schema.");
+            throw new ConnectException("This SMT can be applied only to records with a schema.");
         }
     }
 
@@ -96,19 +97,28 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
-
         if (STRING_SCHEMA.contains(schema)) {
-            final String value = (String) this.operatingValue(inputRecord);
-            final ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                final JsonNode jsonNode = objectMapper.readTree(value);
-                final ObjectNode dropped = this.jsonFieldDropper.processObject((ObjectNode) jsonNode);
-                final String writeValueAsString = objectMapper.writeValueAsString(dropped);
-                return this.newRecord(inputRecord, Schema.OPTIONAL_STRING_SCHEMA, writeValueAsString);
-            } catch (final JsonProcessingException e) {
-                throw new ConnectException(String.format("Could not process the input JSON: %s", e));
-            }
+            return this.applyToStringSchema(inputRecord, schema);
         }
+        return this.applyToStruct(inputRecord);
+    }
+
+    private R applyToStringSchema(final R inputRecord, final Schema schema) {
+        this.jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(this.excludePath);
+        final String value = (String) this.operatingValue(inputRecord);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            final JsonNode jsonNode = objectMapper.readTree(value);
+            final ObjectNode dropped = this.jsonFieldDropper.processObject((ObjectNode) jsonNode);
+            final String writeValueAsString = objectMapper.writeValueAsString(dropped);
+            return this.newRecord(inputRecord, schema, writeValueAsString);
+        } catch (final JsonProcessingException e) {
+            throw new ConnectException(String.format("Could not process the input JSON: %s", e));
+        }
+    }
+
+    private R applyToStruct(final R inputRecord) {
+        this.structFieldDropper = createStructFieldDropper(this.excludePath);
         final Struct value = requireStruct(this.operatingValue(inputRecord), PURPOSE);
 
         final Struct updatedValue = this.structFieldDropper.updateStruct(value);

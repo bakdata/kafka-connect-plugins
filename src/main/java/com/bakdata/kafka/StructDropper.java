@@ -24,8 +24,9 @@
 
 package com.bakdata.kafka;
 
+import static com.bakdata.kafka.Path.initializePath;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,23 +37,24 @@ import org.apache.kafka.connect.data.Struct;
 
 @RequiredArgsConstructor
 class StructDropper {
-    private final List<String> excludePath;
-    private final List<String> currentPath;
+    private final Path path;
 
-    static StructDropper createStructDropper(final String exclude) {
-        final List<String> excludePath = Path.split(exclude);
-        return new StructDropper(excludePath, Collections.emptyList());
+    static StructDropper createStructDropper(final List<String> excludePath) {
+        return new StructDropper(initializePath(excludePath));
     }
 
     Struct processStruct(final Struct struct, final Schema updatedSchema) {
         final Struct structCopy = new Struct(updatedSchema);
         structCopy.schema().fields().forEach(field -> {
                 final String fieldName = field.name();
-                final List<String> subPath = this.getSubPath(fieldName);
-                if (!this.isExclude(subPath)) {
-                    final StructDropper deleteSchema = new StructDropper(this.excludePath, subPath);
-                    final Object transform = deleteSchema.transform(struct.get(fieldName), field.schema());
-                    structCopy.put(fieldName, transform);
+                final Path subPath = this.path.getSubPath(fieldName);
+                if (subPath.isInclude()) {
+                    Object fieldValue = struct.get(fieldName);
+                    if (subPath.isPrefix()) {
+                        final StructDropper structDropper = new StructDropper(subPath);
+                        fieldValue = structDropper.transform(struct.get(fieldName), field.schema());
+                    }
+                    structCopy.put(fieldName, fieldValue);
                 }
             }
         );
@@ -90,13 +92,4 @@ class StructDropper {
         return arrayValues;
     }
 
-    private boolean isExclude(final List<String> strings) {
-        return this.excludePath.equals(strings);
-    }
-
-    private List<String> getSubPath(final String fieldName) {
-        final List<String> strings = new ArrayList<>(this.currentPath);
-        strings.add(fieldName);
-        return strings;
-    }
 }

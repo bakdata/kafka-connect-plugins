@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bakdata.kafka.DropField.Key;
 import com.bakdata.kafka.DropField.Value;
-import com.bakdata.kafka.util.User;
 import com.bakdata.schemaregistrymock.junit5.SchemaRegistryMockExtension;
 import com.bakdata.test.smt.NestedObject;
 import com.bakdata.test.smt.PrimitiveObject;
@@ -43,6 +42,8 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.connect.data.Field;
@@ -62,7 +63,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @ExtendWith(SoftAssertionsExtension.class)
 class DropFieldTest {
     private static final String TEST_TOPIC = "test-topic";
-    private static final String MESSAGE = "This SMT can be applied only to records with schema.";
+    private static final String MESSAGE = "This SMT can be applied only to records with a schema.";
     private final ObjectMapper mapper = new ObjectMapper();
     @RegisterExtension
     final SchemaRegistryMockExtension schemaRegistryMock = new SchemaRegistryMockExtension();
@@ -218,5 +219,13 @@ class DropFieldTest {
         final JsonNode newNode = this.mapper.convertValue(user, JsonNode.class);
 
         return this.mapper.writeValueAsString(newNode);
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class User {
+        private String firstName;
+        private String lastName;
+        private int age;
     }
 }

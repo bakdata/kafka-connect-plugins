@@ -24,16 +24,48 @@
 
 package com.bakdata.kafka;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-@UtilityClass
+@RequiredArgsConstructor
 class Path {
+    @NonNull
+    @Getter
+    private final List<String> excludePath;
+    private final List<String> currentPath;
+
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
+
+    static Path initializePath(final List<String> excludePath) {
+        return new Path(excludePath, Collections.emptyList());
+    }
+
+    static Path createPath(final List<String> excludePath, final List<String> currentPath) {
+        return new Path(excludePath, currentPath);
+    }
 
     static List<String> split(final CharSequence exclude) {
         return Arrays.asList(DOT_REGEX.split(exclude));
+    }
+
+    Path getSubPath(final String fieldName) {
+        final List<String> strings = new ArrayList<>(this.currentPath);
+        strings.add(fieldName);
+        return new Path(this.getExcludePath(), strings);
+    }
+
+    boolean isInclude() {
+        return !(this.excludePath.equals(this.currentPath));
+    }
+
+    boolean isPrefix() {
+        return this.currentPath.size() <= this.excludePath.size() &&
+            this.excludePath.subList(0, this.currentPath.size()).equals(this.currentPath);
     }
 }
