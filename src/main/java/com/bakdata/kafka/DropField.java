@@ -31,7 +31,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.kafka.common.config.ConfigDef;
@@ -56,7 +55,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> STRING_SCHEMA = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
-    private List<String> excludePath;
+    private Path excludePath;
 
     @Override
     public void configure(final Map<String, ?> configs) {

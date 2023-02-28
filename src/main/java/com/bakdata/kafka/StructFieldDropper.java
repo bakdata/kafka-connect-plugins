@@ -27,7 +27,6 @@ package com.bakdata.kafka;
 import static com.bakdata.kafka.SchemaDropper.createSchemaDropper;
 import static com.bakdata.kafka.StructDropper.createStructDropper;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
@@ -42,7 +41,7 @@ final class StructFieldDropper {
     private final SchemaDropper schemaDropper;
     private final StructDropper structDropper;
 
-    static StructFieldDropper createStructFieldDropper(final List<String> excludePath) {
+    static StructFieldDropper createStructFieldDropper(final Path excludePath) {
         final SchemaDropper schemaDropper = createSchemaDropper(excludePath);
         final StructDropper structDropper = createStructDropper(excludePath);
         return new StructFieldDropper(new SynchronizedCache<>(new LRUCache<>(CACHE_SIZE)), schemaDropper,

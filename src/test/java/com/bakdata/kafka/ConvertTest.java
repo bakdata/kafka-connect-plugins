@@ -45,7 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 class ConvertTest {
 
     private static final String TEST_TOPIC = "test-topic";
-    
+
     @InjectSoftAssertions
     private SoftAssertions softly;
 

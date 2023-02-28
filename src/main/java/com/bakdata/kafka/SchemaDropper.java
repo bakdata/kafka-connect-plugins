@@ -24,8 +24,7 @@
 
 package com.bakdata.kafka;
 
-import java.util.Collections;
-import java.util.List;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -33,11 +32,10 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 
 @RequiredArgsConstructor
 class SchemaDropper {
-    private final Path excludePath;
-    private final Path currentPath;
+    private final @NonNull PathTraverser pathTraverser;
 
-    static SchemaDropper createSchemaDropper(final List<String> excludePath) {
-        return new SchemaDropper(new Path(excludePath), new Path(Collections.emptyList()));
+    static SchemaDropper createSchemaDropper(final Path excludePath) {
+        return new SchemaDropper(PathTraverser.initialize(excludePath));
     }
 
     Schema processSchema(final Schema schema) {
@@ -49,11 +47,11 @@ class SchemaDropper {
     private void addFields(final Schema schema, final SchemaBuilder schemaCopy) {
         schema.fields().forEach(field -> {
             final String fieldName = field.name();
-            final Path subPath = this.currentPath.getSubPath(fieldName);
-            if (subPath.isInclude(this.excludePath)) {
+            final PathTraverser subPath = this.pathTraverser.getSubPath(fieldName);
+            if (subPath.isIncluded()) {
                 Schema fieldSchema = field.schema();
-                if (subPath.isPrefix(this.excludePath)) {
-                    final SchemaDropper deleteSchema = new SchemaDropper(this.excludePath, subPath);
+                if (subPath.isPrefix()) {
+                    final SchemaDropper deleteSchema = new SchemaDropper(subPath);
                     fieldSchema = deleteSchema.transform(field.schema());
                 }
                 schemaCopy.field(fieldName, fieldSchema);

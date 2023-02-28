@@ -28,28 +28,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Collections;
-import java.util.List;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class JsonFieldDropper {
-    private final Path excludePath;
-    private final Path currentPath;
+    @NonNull
+    private final PathTraverser pathTraverser;
 
-    static JsonFieldDropper createJsonFieldDropper(final List<String> excludePath) {
-        return new JsonFieldDropper(new Path(excludePath), new Path(Collections.emptyList()));
+    static JsonFieldDropper createJsonFieldDropper(final Path excludePath) {
+        return new JsonFieldDropper(PathTraverser.initialize(excludePath));
     }
 
     ObjectNode processObject(final ObjectNode value) {
         final ObjectNode objectCopy = JsonNodeFactory.instance.objectNode();
         value.fields().forEachRemaining(field -> {
                 final String fieldName = field.getKey();
-                final Path subPath = this.currentPath.getSubPath(fieldName);
-                if (subPath.isInclude(this.excludePath)) {
+                final PathTraverser subPath = this.pathTraverser.getSubPath(fieldName);
+                if (subPath.isIncluded()) {
                     JsonNode fieldValue = field.getValue();
-                    if (subPath.isPrefix(this.excludePath)) {
-                        final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(this.excludePath, subPath);
+                    if (subPath.isPrefix()) {
+                        final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(subPath);
                         fieldValue = jsonFieldDropper.transform(fieldValue);
                     }
                     objectCopy.set(fieldName, fieldValue);

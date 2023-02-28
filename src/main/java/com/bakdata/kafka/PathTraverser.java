@@ -24,30 +24,29 @@
 
 package com.bakdata.kafka;
 
-import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
-import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import java.util.Collections;
+import lombok.AccessLevel;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-@ExtendWith(SoftAssertionsExtension.class)
-class PathTest {
-    @InjectSoftAssertions
-    private SoftAssertions softly;
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class PathTraverser {
+    private final @NonNull Path excludePath;
+    private final @NonNull Path currentPath;
 
-    @Test
-    void shouldBeIncluded() {
-        final Path excludePath = Path.split("a.b.c");
-        final Path otherPath = excludePath.getSubPath("d");
-
-        this.softly.assertThat(otherPath.isIncluded(excludePath)).isTrue();
+    static PathTraverser initialize(final Path excludePath) {
+        return new PathTraverser(excludePath, new Path(Collections.emptyList()));
     }
 
-    @Test
-    void shouldBePrefixOfPath() {
-        final Path excludePath = Path.split("a.b.c");
-        final Path otherPath = excludePath.getSubPath("d");
+    PathTraverser getSubPath(final String fieldName) {
+        return new PathTraverser(this.excludePath, this.currentPath.getSubPath(fieldName));
+    }
 
-        this.softly.assertThat(excludePath.isPrefix(otherPath)).isTrue();
+    boolean isIncluded() {
+        return this.currentPath.isIncluded(this.excludePath);
+    }
+
+    boolean isPrefix() {
+        return this.currentPath.isPrefix(this.excludePath);
     }
 }

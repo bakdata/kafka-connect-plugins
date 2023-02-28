@@ -35,8 +35,8 @@ class Path {
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
     private final List<String> splitPath;
 
-    static List<String> split(final CharSequence exclude) {
-        return Arrays.asList(DOT_REGEX.split(exclude));
+    static Path split(final CharSequence exclude) {
+        return new Path(Arrays.asList(DOT_REGEX.split(exclude)));
     }
 
     Path getSubPath(final String fieldName) {
@@ -45,8 +45,8 @@ class Path {
         return new Path(strings);
     }
 
-    boolean isInclude(final Path otherPath) {
-        return !(otherPath.splitPath.equals(this.splitPath));
+    boolean isIncluded(final Path otherPath) {
+        return !otherPath.splitPath.equals(this.splitPath);
     }
 
     boolean isPrefix(final Path otherPath) {

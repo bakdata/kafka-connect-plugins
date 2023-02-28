@@ -25,33 +25,32 @@
 package com.bakdata.kafka;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 
 @RequiredArgsConstructor
 class StructDropper {
-    private final Path excludePath;
-    private final Path currentPath;
+    private final @NonNull PathTraverser pathTraverser;
 
-    static StructDropper createStructDropper(final List<String> excludePath) {
-        return new StructDropper(new Path(excludePath), new Path(Collections.emptyList()));
+    static StructDropper createStructDropper(final Path excludePath) {
+        return new StructDropper(PathTraverser.initialize(excludePath));
     }
 
     Struct processStruct(final Struct struct, final Schema updatedSchema) {
         final Struct structCopy = new Struct(updatedSchema);
         structCopy.schema().fields().forEach(field -> {
                 final String fieldName = field.name();
-                final Path subPath = this.currentPath.getSubPath(fieldName);
-                if (subPath.isInclude(this.excludePath)) {
+                final PathTraverser subPath = this.pathTraverser.getSubPath(fieldName);
+                if (subPath.isIncluded()) {
                     Object fieldValue = struct.get(fieldName);
-                    if (subPath.isPrefix(this.excludePath)) {
-                        final StructDropper structDropper = new StructDropper(this.excludePath, subPath);
+                    if (subPath.isPrefix()) {
+                        final StructDropper structDropper = new StructDropper(subPath);
                         fieldValue = structDropper.transform(struct.get(fieldName), field.schema());
                     }
                     structCopy.put(fieldName, fieldValue);
@@ -93,5 +92,4 @@ class StructDropper {
         }
         return arrayValues;
     }
-
 }
