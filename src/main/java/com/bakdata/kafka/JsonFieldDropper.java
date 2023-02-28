@@ -24,32 +24,32 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Path.initializePath;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class JsonFieldDropper {
-    private final Path path;
+    private final Path excludePath;
+    private final Path currentPath;
 
     static JsonFieldDropper createJsonFieldDropper(final List<String> excludePath) {
-        return new JsonFieldDropper(initializePath(excludePath));
+        return new JsonFieldDropper(new Path(excludePath), new Path(Collections.emptyList()));
     }
 
     ObjectNode processObject(final ObjectNode value) {
         final ObjectNode objectCopy = JsonNodeFactory.instance.objectNode();
         value.fields().forEachRemaining(field -> {
                 final String fieldName = field.getKey();
-                final Path subPath = this.path.getSubPath(fieldName);
-                if (subPath.isInclude()) {
+                final Path subPath = this.currentPath.getSubPath(fieldName);
+                if (subPath.isInclude(this.excludePath)) {
                     JsonNode fieldValue = field.getValue();
-                    if (subPath.isPrefix()) {
-                        final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(subPath);
+                    if (subPath.isPrefix(this.excludePath)) {
+                        final JsonFieldDropper jsonFieldDropper = new JsonFieldDropper(this.excludePath, subPath);
                         fieldValue = jsonFieldDropper.transform(fieldValue);
                     }
                     objectCopy.set(fieldName, fieldValue);

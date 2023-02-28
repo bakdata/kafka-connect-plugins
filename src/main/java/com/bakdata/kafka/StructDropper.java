@@ -24,9 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.Path.initializePath;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,21 +36,22 @@ import org.apache.kafka.connect.data.Struct;
 
 @RequiredArgsConstructor
 class StructDropper {
-    private final Path path;
+    private final Path excludePath;
+    private final Path currentPath;
 
     static StructDropper createStructDropper(final List<String> excludePath) {
-        return new StructDropper(initializePath(excludePath));
+        return new StructDropper(new Path(excludePath), new Path(Collections.emptyList()));
     }
 
     Struct processStruct(final Struct struct, final Schema updatedSchema) {
         final Struct structCopy = new Struct(updatedSchema);
         structCopy.schema().fields().forEach(field -> {
                 final String fieldName = field.name();
-                final Path subPath = this.path.getSubPath(fieldName);
-                if (subPath.isInclude()) {
+                final Path subPath = this.currentPath.getSubPath(fieldName);
+                if (subPath.isInclude(this.excludePath)) {
                     Object fieldValue = struct.get(fieldName);
-                    if (subPath.isPrefix()) {
-                        final StructDropper structDropper = new StructDropper(subPath);
+                    if (subPath.isPrefix(this.excludePath)) {
+                        final StructDropper structDropper = new StructDropper(this.excludePath, subPath);
                         fieldValue = structDropper.transform(struct.get(fieldName), field.schema());
                     }
                     structCopy.put(fieldName, fieldValue);
@@ -61,6 +61,8 @@ class StructDropper {
         return structCopy;
     }
 
+    // Cast is safe because the types are checked in the switch
+    @SuppressWarnings("unchecked")
     private Object transform(final Object struct, final Schema schema) {
         switch (schema.type()) {
             case ARRAY:

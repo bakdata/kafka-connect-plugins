@@ -24,7 +24,6 @@
 
 package com.bakdata.kafka;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.kafka.connect.data.Field;
@@ -74,7 +73,6 @@ class StructFieldDropperTest {
             StructFieldDropper.createStructFieldDropper(Path.split("boolean_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
 
@@ -83,7 +81,6 @@ class StructFieldDropperTest {
 
         final Schema complexSchema = SchemaBuilder
             .struct()
-            .name("complexObject")
             .field("boolean_field", Schema.BOOLEAN_SCHEMA)
             .field("complex_field", primitiveSchema)
             .build();
@@ -136,7 +133,6 @@ class StructFieldDropperTest {
             StructFieldDropper.createStructFieldDropper(Path.split("complex_field.dropped_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -147,7 +143,6 @@ class StructFieldDropperTest {
 
         final Schema complexSchema = SchemaBuilder
             .struct()
-            .name("complexObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("complex_field", primitiveSchema)
             .build();
@@ -199,7 +194,6 @@ class StructFieldDropperTest {
             StructFieldDropper.createStructFieldDropper(Path.split("complex_field.dropped_field"));
         final Schema innerSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -209,7 +203,6 @@ class StructFieldDropperTest {
         innerStruct.put("kept_field", 1234);
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("NestedObject")
             .field("complex_field", innerSchema)
             .field("boolean_field", Schema.BOOLEAN_SCHEMA)
             .build();
@@ -258,7 +251,6 @@ class StructFieldDropperTest {
             StructFieldDropper.createStructFieldDropper(Path.split("complex_field"));
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .build();
 
@@ -266,7 +258,6 @@ class StructFieldDropperTest {
         primitiveObject.put("dropped_field", "This value will be dropped.");
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("complexObject")
             .field("complex_field", primitiveSchema)
             .field("boolean_field", Schema.BOOLEAN_SCHEMA)
             .build();
@@ -328,7 +319,6 @@ class StructFieldDropperTest {
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -343,12 +333,9 @@ class StructFieldDropperTest {
 
         final Schema collectionsSchema = SchemaBuilder
             .array(primitiveSchema)
-            .name("collections")
-            .defaultValue(Collections.emptyList())
             .build();
         final Schema complexSchema = SchemaBuilder
             .struct()
-            .name("RecordCollection")
             .field("collections", collectionsSchema)
             .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
@@ -423,7 +410,6 @@ class StructFieldDropperTest {
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("PrimitiveObject")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -438,12 +424,9 @@ class StructFieldDropperTest {
 
         final Schema collectionSchema = SchemaBuilder
             .array(primitiveSchema)
-            .name("collections")
-            .defaultValue(Collections.emptyList())
             .build();
         final Schema complexSchema = SchemaBuilder
             .struct()
-            .name("RecordCollection")
             .field("collections", collectionSchema)
             .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
@@ -517,7 +500,6 @@ class StructFieldDropperTest {
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("primitiveFields")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -531,7 +513,6 @@ class StructFieldDropperTest {
         primitiveStruct2.put("kept_field", 5678);
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("nestedObject")
             .field("complex_field", primitiveSchema)
             .field("boolean_field", Schema.BOOLEAN_SCHEMA)
             .build();
@@ -546,12 +527,10 @@ class StructFieldDropperTest {
 
         final Schema collectionsSchema = SchemaBuilder
             .array(complexSchema)
-            .name("collections")
             .build();
 
         final Schema recordCollectionsSchema = SchemaBuilder
             .struct()
-            .name("RecordCollection")
             .field("collections", collectionsSchema)
             .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
@@ -674,7 +653,6 @@ class StructFieldDropperTest {
 
         final Schema primitiveSchema = SchemaBuilder
             .struct()
-            .name("primitiveFields")
             .field("dropped_field", Schema.STRING_SCHEMA)
             .field("kept_field", Schema.INT32_SCHEMA)
             .build();
@@ -688,7 +666,6 @@ class StructFieldDropperTest {
         primitiveStruct2.put("kept_field", 5678);
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("nestedObject")
             .field("complex_field", primitiveSchema)
             .build();
 
@@ -721,7 +698,6 @@ class StructFieldDropperTest {
 
         final Schema recordCollectionsSchema = SchemaBuilder
             .struct()
-            .name("RecordCollection")
             .field("collections", collectionsSchema)
             .field("primitive_field", Schema.INT32_SCHEMA)
             .build();
@@ -833,7 +809,6 @@ class StructFieldDropperTest {
         primitiveStruct2.put("kept_field", 5678);
 
         final Schema complexSchema = SchemaBuilder.struct()
-            .name("complexField")
             .field("complex_field", primitiveSchema)
             .build();
 
@@ -856,7 +831,6 @@ class StructFieldDropperTest {
 
         final Schema recordCollectionsSchema = SchemaBuilder
             .struct()
-            .name("RecordCollection")
             .field("collections", collectionsSchema)
             .build();
 

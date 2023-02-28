@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bakdata.kafka.Convert.Key;
 import com.bakdata.kafka.Convert.Value;
-import com.bakdata.test.smt.PrimitiveObject;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.kafka.connect.data.Schema;
@@ -46,7 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 class ConvertTest {
 
     private static final String TEST_TOPIC = "test-topic";
-    private static final String MESSAGE = "Schema should not be null.";
+    
     @InjectSoftAssertions
     private SoftAssertions softly;
 
@@ -107,7 +106,6 @@ class ConvertTest {
 
     @Test
     void shouldRaiseExceptionIfSchemaTypeIsNotBytes() {
-        final PrimitiveObject primitiveObject = new PrimitiveObject("dropped_field", 1234);
         final SinkRecord sinkRecord = getSinkRecord(null, "testKey".getBytes(StandardCharsets.UTF_8),
             Schema.INT32_SCHEMA, "testValue".getBytes(StandardCharsets.UTF_8));
         try (final Convert<SinkRecord> convert = new Value<>()) {

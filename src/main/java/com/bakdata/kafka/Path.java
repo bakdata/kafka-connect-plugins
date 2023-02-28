@@ -26,46 +26,31 @@ package com.bakdata.kafka;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class Path {
-    @NonNull
-    @Getter
-    private final List<String> excludePath;
-    private final List<String> currentPath;
-
     private static final Pattern DOT_REGEX = Pattern.compile("\\.");
-
-    static Path initializePath(final List<String> excludePath) {
-        return new Path(excludePath, Collections.emptyList());
-    }
-
-    static Path createPath(final List<String> excludePath, final List<String> currentPath) {
-        return new Path(excludePath, currentPath);
-    }
+    private final List<String> splitPath;
 
     static List<String> split(final CharSequence exclude) {
         return Arrays.asList(DOT_REGEX.split(exclude));
     }
 
     Path getSubPath(final String fieldName) {
-        final List<String> strings = new ArrayList<>(this.currentPath);
+        final List<String> strings = new ArrayList<>(this.splitPath);
         strings.add(fieldName);
-        return new Path(this.getExcludePath(), strings);
+        return new Path(strings);
     }
 
-    boolean isInclude() {
-        return !(this.excludePath.equals(this.currentPath));
+    boolean isInclude(final Path otherPath) {
+        return !(otherPath.splitPath.equals(this.splitPath));
     }
 
-    boolean isPrefix() {
-        return this.currentPath.size() <= this.excludePath.size() &&
-            this.excludePath.subList(0, this.currentPath.size()).equals(this.currentPath);
+    boolean isPrefix(final Path otherPath) {
+        return this.splitPath.size() <= otherPath.splitPath.size() &&
+            otherPath.splitPath.subList(0, this.splitPath.size()).equals(this.splitPath);
     }
 }

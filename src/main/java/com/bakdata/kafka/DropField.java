@@ -57,8 +57,6 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
         .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> STRING_SCHEMA = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);
     private List<String> excludePath;
-    private StructFieldDropper structFieldDropper;
-    private JsonFieldDropper jsonFieldDropper;
 
     @Override
     public void configure(final Map<String, ?> configs) {
@@ -85,8 +83,6 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     @Override
     public void close() {
-        this.structFieldDropper = null;
-        this.jsonFieldDropper = null;
     }
 
     protected abstract Schema operatingSchema(R inputRecord);
@@ -104,12 +100,12 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     }
 
     private R applyToStringSchema(final R inputRecord, final Schema schema) {
-        this.jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(this.excludePath);
+        final JsonFieldDropper jsonFieldDropper = JsonFieldDropper.createJsonFieldDropper(this.excludePath);
         final String value = (String) this.operatingValue(inputRecord);
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
             final JsonNode jsonNode = objectMapper.readTree(value);
-            final ObjectNode dropped = this.jsonFieldDropper.processObject((ObjectNode) jsonNode);
+            final ObjectNode dropped = jsonFieldDropper.processObject((ObjectNode) jsonNode);
             final String writeValueAsString = objectMapper.writeValueAsString(dropped);
             return this.newRecord(inputRecord, schema, writeValueAsString);
         } catch (final JsonProcessingException e) {
@@ -118,10 +114,10 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
     }
 
     private R applyToStruct(final R inputRecord) {
-        this.structFieldDropper = createStructFieldDropper(this.excludePath);
+        final StructFieldDropper structFieldDropper = createStructFieldDropper(this.excludePath);
         final Struct value = requireStruct(this.operatingValue(inputRecord), PURPOSE);
 
-        final Struct updatedValue = this.structFieldDropper.updateStruct(value);
+        final Struct updatedValue = structFieldDropper.updateStruct(value);
         return this.newRecord(inputRecord, updatedValue.schema(), updatedValue);
     }
 

@@ -24,7 +24,6 @@
 
 package com.bakdata.kafka;
 
-import java.util.List;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -38,7 +37,6 @@ class PathTest {
 
     @Test
     void ShouldSplitPath() {
-        final List<String> split = Path.split("a.b.c");
         this.softly.assertThat(Path.split("a.b.c"))
             .hasSize(3)
             .containsExactly("a", "b", "c");
