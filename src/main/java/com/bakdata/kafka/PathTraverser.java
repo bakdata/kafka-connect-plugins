@@ -30,7 +30,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class PathTraverser {
+final class PathTraverser {
     private final @NonNull Path excludePath;
     private final @NonNull Path currentPath;
 
