@@ -88,7 +88,7 @@ public abstract class DropField<R extends ConnectRecord<R>> implements Transform
 
     protected abstract Object operatingValue(R inputRecord);
 
-    protected abstract R newRecord(R record, Schema updatedSchema, Object updatedValue);
+    protected abstract R newRecord(R inputRecord, Schema updatedSchema, Object updatedValue);
 
     private R applyWithSchema(final R inputRecord) {
         final Schema schema = this.operatingSchema(inputRecord);
