@@ -51,7 +51,7 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 public abstract class DropField<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String EXCLUDE_FIELD = "exclude";
     private static final String PURPOSE = "field deletion";
-    private static final String FIELD_DOCUMENTATION = "Fields to exclude from the resulting Struct.";
+    private static final String FIELD_DOCUMENTATION = "Path to field to exclude from the resulting Struct.";
     private static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(EXCLUDE_FIELD, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH, FIELD_DOCUMENTATION);
     private static final Set<Schema> STRING_SCHEMA = Set.of(Schema.OPTIONAL_STRING_SCHEMA, Schema.STRING_SCHEMA);

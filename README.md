@@ -35,9 +35,9 @@ It converts the value to a string schema.
 
 #### Properties
 
-| Name        | Description                  | Type  | Default                  | Valid Values                                                                                                                                    | Importance |
-|-------------|------------------------------|-------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| `converter` | Converter to apply to input. | class | ByteArrayConverter.class | All classes that implement the [Kafka Converter interface](https://kafka.apache.org/34/javadoc/org/apache/kafka/connect/storage/Converter.html) | high       |
+| Name        | Description                  | Type  | Default                    | Valid Values                                                                                                                                    | Importance |
+|-------------|------------------------------|-------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `converter` | Converter to apply to input. | class | `ByteArrayConverter.class` | All classes that implement the [Kafka Converter interface](https://kafka.apache.org/34/javadoc/org/apache/kafka/connect/storage/Converter.html) | high       |
 
 ### Drop field
 
@@ -108,9 +108,9 @@ The value would transform into this:
 
 #### Properties
 
-| Name      | Description                              | Type   | Default | Valid Values                                              | Importance |
-|-----------|------------------------------------------|--------|---------|-----------------------------------------------------------|------------|
-| `exclued` | Field to path from the resulting Struct. | string | -       | The path is separated by "." character. Example: `a.b.c`. | high       |
+| Name      | Description                                         | Type     | Default | Valid Values                                              | Importance |
+|-----------|-----------------------------------------------------|----------|---------|-----------------------------------------------------------|------------|
+| `exclude` | Path to field to exclude from the resulting Struct. | `string` | -       | The path is separated by "." character. Example: `a.b.c`. | high       |
 
 ## Installation
 
@@ -139,7 +139,6 @@ All dependencies should be included in the Gradle files, there are no external p
 ```bash
 clone >git git@github.com:bakdata/kafka-connect-plugins.git
 kafka-connect-plugins >cd && ./gradlew build
-
 ```
 
 Please note, that we have [code styles](https://github.com/bakdata/bakdata-code-styles) for Java.
