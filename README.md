@@ -16,7 +16,8 @@ A collection of Kafka Connect plugins.
 Converts a byte record using the given converter class.
 The [MirrorMaker](https://github.com/apache/kafka/blob/trunk/connect/mirror/README.md)
 connector uses byte array records.
-To process these records, we need to convert them to string first.
+To apply other SMTs to these records,
+we need to convert them to the appropriate format first.
 
 Use the concrete transformation type designed for the record key (`com.bakdata.kafka.Convert$Key`)
 or value (`com.bakdata.kafka.Convert$Value`).
@@ -78,9 +79,9 @@ Imagine you have the following record value:
 This configuration snippet shows how to use `DropField` to exclude the field `dropped_field`.
 
 ```yaml
-"transforms": "DropField",
-"transforms.DropField.type": "com.bakdata.kafka.DropField$Value",
-"transforms.DropField.exclude": "collections.complex_field.dropped_field"
+"transforms": "dropfield",
+"transforms.dropfield.type": "com.bakdata.kafka.DropField$Value",
+"transforms.dropfield.exclude": "collections.complex_field.dropped_field"
 ```
 
 The value would transform into this:
