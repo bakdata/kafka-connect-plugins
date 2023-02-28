@@ -37,17 +37,23 @@ class PathTest {
 
     @Test
     void shouldBeIncluded() {
-        final Path excludePath = Path.split("a.b.c");
-        final Path otherPath = excludePath.getSubPath("d");
+        final Path path = Path.split("a.b.c");
+        final Path otherPath = path.getSubPath("d");
 
-        this.softly.assertThat(otherPath.isIncluded(excludePath)).isTrue();
+        this.softly.assertThat(otherPath.isIncluded(path)).isTrue();
+
+        final Path excludePath = Path.split("a.b.c");
+        this.softly.assertThat(excludePath.isIncluded(path)).isFalse();
     }
 
     @Test
     void shouldBePrefixOfPath() {
-        final Path excludePath = Path.split("a.b.c");
-        final Path otherPath = excludePath.getSubPath("d");
+        final Path path = Path.split("a.b.c");
+        final Path otherPath = path.getSubPath("d");
 
-        this.softly.assertThat(excludePath.isPrefix(otherPath)).isTrue();
+        this.softly.assertThat(path.isPrefix(otherPath)).isTrue();
+
+        final Path excludePath = Path.split("e.f.g");
+        this.softly.assertThat(excludePath.isPrefix(path)).isFalse();
     }
 }

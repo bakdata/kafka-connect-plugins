@@ -24,7 +24,7 @@ or value (`com.bakdata.kafka.Convert$Value`).
 
 #### Example
 
-This configuration snippet shows how to use `Converter`.
+This configuration snippet shows how to use `Convert`.
 It converts the value to a string schema.
 
 ```yaml
