@@ -52,8 +52,6 @@ class PathTest {
         final Path otherPath = path.getSubPath("d");
 
         this.softly.assertThat(path.isPrefix(otherPath)).isTrue();
-
-        final Path excludePath = Path.split("e.f.g");
-        this.softly.assertThat(excludePath.isPrefix(path)).isFalse();
+        this.softly.assertThat(otherPath.isPrefix(path)).isFalse();
     }
 }
