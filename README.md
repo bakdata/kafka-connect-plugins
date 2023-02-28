@@ -1,7 +1,7 @@
 [![Build Status](https://dev.azure.com/bakdata/public/_apis/build/status/bakdata.kafka-connect-plugins?branchName=main)](https://dev.azure.com/bakdata/public/_build/latest?definitionId=35&branchName=main)
 [![Sonarcloud status](https://sonarcloud.io/api/project_badges/measure?project=com.bakdata.kafka%3Akafka-connect-plugins&metric=alert_status)](https://sonarcloud.io/project/overview?id=com.bakdata.kafka:kafka-connect-plugins)
 [![Code coverage](https://sonarcloud.io/api/project_badges/measure?project=com.bakdata.kafka%3Akafka-connect-plugins&metric=coverage)](https://sonarcloud.io/project/overview?id=com.bakdata.kafka:kafka-connect-plugins)
-[![Maven](https://img.shields.io/maven-central/v/com.bakdata.kafka-connect-plugins/kafka-connect-plugins.svg)](https://search.maven.org/search?q=g:com.bakdata.kafka-connect-plugins%20AND%20a:kafka-connect-plugins&core=gav)
+[![Maven](https://img.shields.io/maven-central/v/com.bakdata.kafka/kafka-connect-plugins.svg)](https://search.maven.org/search?q=g:com.bakdata.kafka%20AND%20a:kafka-connect-plugins&core=gav)
 
 # Kafka Connect plugins
 
