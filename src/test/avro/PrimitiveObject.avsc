@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "PrimitiveObject",
+  "namespace": "com.bakdata.test.smt",
+  "fields": [
+    {
+      "name": "dropped_field",
+      "type": "string"
+    },
+    {
+      "name": "kept_field",
+      "type": "int"
+    }
+  ]
+}
