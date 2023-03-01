@@ -137,8 +137,8 @@ If you want to contribute to this project, you can simply clone the repository a
 All dependencies should be included in the Gradle files, there are no external prerequisites.
 
 ```bash
-clone >git git@github.com:bakdata/kafka-connect-plugins.git
-kafka-connect-plugins >cd && ./gradlew build
+> git clone git@github.com:bakdata/kafka-connect-plugins.git
+> cd kafka-connect-plugins && ./gradlew build
 ```
 
 Please note, that we have [code styles](https://github.com/bakdata/bakdata-code-styles) for Java.
