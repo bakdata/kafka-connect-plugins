@@ -1,6 +1,5 @@
-.gradle
+.*
+!.gitignore
+!.github
 build
-.vscode
-.idea
 bin
-.DS_STORE
