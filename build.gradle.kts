@@ -5,7 +5,7 @@ plugins {
     id("com.bakdata.release") version "1.7.1"
     id("com.bakdata.sonar") version "1.7.1"
     id("com.bakdata.sonatype") version "1.9.0"
-    id("io.freefair.lombok") version "8.12.2"
+    id("io.freefair.lombok") version "8.13.1"
     id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
 }
 
