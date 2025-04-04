@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "NullableObject",
+  "namespace": "com.bakdata.test.smt",
+  "fields": [
+    {
+      "name": "field1",
+      "type": "string"
+    },
+    {
+      "name": "field2",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ]
+}

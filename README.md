@@ -112,6 +112,33 @@ The value would transform into this:
 |-----------|-----------------------------------------------------|----------|---------|-----------------------------------------------------------|------------|
 | `exclude` | Path to field to exclude from the resulting Struct. | `string` | -       | The path is separated by "." character. Example: `a.b.c`. | high       |
 
+## Predicates
+
+### NullPredicate
+
+#### Description
+
+Predicate testing that the value or a field of the value is null.
+
+#### Example
+
+This configuration snippet shows how to use `NullPredicate`.
+It drops all messages where `field1` is null:
+
+```yaml
+"transforms": "filter"
+"transforms.filter.type": "org.apache.kafka.connect.transforms.Filter"
+"transforms.filter.predicate": "field1NonNull"
+"transforms.predicate.field1NonNull.type": "com.bakdata.kafka.NullPredicate"
+"transforms.predicate.field1NonNull.field": "field1"
+```
+
+#### Properties
+
+| Name    | Description                                                                       | Type   | Default | Valid Values                      | Importance |
+|---------|-----------------------------------------------------------------------------------|--------|---------|-----------------------------------|------------|
+| `field` | Name of the field to check for null. If not provided, the whole value is checked. | String | `""`    | All fields of the record's schema | medium     |
+
 ## Installation
 
 If you are using Docker to run Kafka Connect,
