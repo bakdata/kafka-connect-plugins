@@ -37,6 +37,8 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
 /**
  * Predicate testing that the value or a field of the value is null.
+ *
+ * @param <R> type of record
  */
 public class NullPredicate<R extends ConnectRecord<R>> implements Predicate<R> {
 
@@ -49,13 +51,13 @@ public class NullPredicate<R extends ConnectRecord<R>> implements Predicate<R> {
     private String fieldPath = DEFAULT_VALUE;
 
     @Override
-    public boolean test(final R record) {
+    public boolean test(final R connectRecord) {
         if (this.fieldPath.isEmpty()) {
-            return record.value() == null;
+            return connectRecord.value() == null;
         }
 
         final Struct value =
-                requireStruct(record.value(), String.format("extracting field for field '%s'", this.fieldPath));
+                requireStruct(connectRecord.value(), String.format("extracting field for field '%s'", this.fieldPath));
         final Field field = value.schema().field(this.fieldPath);
         if (field == null) {
             throw new IllegalArgumentException(String.format("Field %s not part of value's schema", this.fieldPath));
