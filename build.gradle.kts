@@ -2,12 +2,11 @@ description = "A Kafka Connect SMT for removing nested fields in keys and values
 
 plugins {
     `java-library`
-    id("net.researchgate.release") version "3.0.2"
-    id("com.bakdata.sonar") version "1.1.16"
-    id("com.bakdata.sonatype") version "1.1.14"
-    id("org.hildan.github.changelog") version "2.2.0"
+    id("com.bakdata.release") version "1.7.1"
+    id("com.bakdata.sonar") version "1.7.1"
+    id("com.bakdata.sonatype") version "1.9.0"
+    id("io.freefair.lombok") version "8.12.2"
     id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
-    id("io.freefair.lombok") version "8.4"
 }
 
 group = "com.bakdata.kafka"
@@ -61,19 +60,13 @@ java {
     }
 }
 
-configure<com.bakdata.gradle.SonatypeSettings> {
+publication {
     developers {
         developer {
             name.set("Ramin Gharib")
             id.set("raminqaf")
         }
     }
-}
-
-configure<org.hildan.github.changelog.plugin.GitHubChangelogExtension> {
-    githubUser = "bakdata"
-    futureVersionTag = findProperty("changelog.releaseVersion")?.toString()
-    sinceTag = findProperty("changelog.sinceTag")?.toString()
 }
 
 tasks {
